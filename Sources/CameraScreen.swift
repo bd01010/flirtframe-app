@@ -8,6 +8,9 @@ struct CameraScreen: View {
     @State private var showingAnalysis = false
     @State private var analysisResult: AnalysisResult?
     @State private var isProcessing = false
+    @State private var showingError = false
+    @State private var errorMessage = ""
+    @State private var showingPermissionAlert = false
     @EnvironmentObject var appState: AppState
     
     var body: some View {
@@ -66,7 +69,26 @@ struct CameraScreen: View {
             }
         }
         .onAppear {
-            camera.checkPermissions()
+            camera.checkPermissions { granted in
+                if !granted {
+                    self.showingPermissionAlert = true
+                }
+            }
+        }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+        .alert("Camera Access Required", isPresented: $showingPermissionAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Please enable camera access in Settings to capture photos.")
         }
         .sheet(isPresented: $showingAnalysis) {
             if let result = analysisResult, let image = capturedImage {
@@ -85,12 +107,17 @@ struct CameraScreen: View {
             self.capturedImage = image
             if let image = image {
                 analyzePhoto(image)
+            } else {
+                self.errorMessage = "Failed to capture photo. Please try again."
+                self.showingError = true
             }
         }
     }
     
     private func openGallery() {
-        // Implementation for gallery picker
+        // TODO: Implement gallery picker
+        self.errorMessage = "Gallery feature coming soon!"
+        self.showingError = true
     }
     
     private func analyzePhoto(_ image: UIImage) {
@@ -112,7 +139,8 @@ struct CameraScreen: View {
             } catch {
                 await MainActor.run {
                     self.isProcessing = false
-                    // Show error alert
+                    self.errorMessage = "Failed to analyze photo. Please try again."
+                    self.showingError = true
                 }
             }
         }
@@ -132,20 +160,32 @@ class CameraModel: NSObject, ObservableObject {
     private var input: AVCaptureDeviceInput?
     private var position: AVCaptureDevice.Position = .back
     
-    func checkPermissions() {
+    deinit {
+        session.stopRunning()
+    }
+    
+    func checkPermissions(completion: ((Bool) -> Void)? = nil) {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             setUp()
+            completion?(true)
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
-                if granted {
-                    DispatchQueue.main.async {
+                DispatchQueue.main.async {
+                    if granted {
                         self.setUp()
                     }
+                    completion?(granted)
                 }
             }
-        default:
-            break
+        case .denied, .restricted:
+            DispatchQueue.main.async {
+                completion?(false)
+            }
+        @unknown default:
+            DispatchQueue.main.async {
+                completion?(false)
+            }
         }
     }
     
@@ -240,15 +280,29 @@ struct CameraPreview: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: UIScreen.main.bounds)
         
-        camera.preview = AVCaptureVideoPreviewLayer(session: camera.session)
-        camera.preview.frame = view.frame
-        camera.preview.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(camera.preview)
+        DispatchQueue.main.async {
+            if camera.preview == nil {
+                camera.preview = AVCaptureVideoPreviewLayer(session: camera.session)
+            }
+            camera.preview.frame = view.frame
+            camera.preview.videoGravity = .resizeAspectFill
+            
+            // Remove any existing preview layers
+            view.layer.sublayers?.forEach { sublayer in
+                if sublayer is AVCaptureVideoPreviewLayer {
+                    sublayer.removeFromSuperlayer()
+                }
+            }
+            
+            view.layer.addSublayer(camera.preview)
+        }
         
         return view
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        
+        DispatchQueue.main.async {
+            camera.preview?.frame = uiView.bounds
+        }
     }
 }
