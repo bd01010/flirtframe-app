@@ -112,4 +112,4 @@ xcodebuild test -scheme FlirtFrame -destination 'platform=iOS Simulator,name=iPh
 
 Copyright © 2024 FlirtFrame. All rights reserved.
 
-This is proprietary software. Unauthorized copying, modification, or distribution is strictly prohibited.
+This is proprietary software. Unauthorized copying, modification, or distribution is strictly prohibited.# Trigger build
