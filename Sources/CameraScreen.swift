@@ -83,7 +83,9 @@ struct CameraScreen: View {
     private func capturePhoto() {
         camera.capturePhoto { image in
             self.capturedImage = image
-            analyzePhoto(image)
+            if let image = image {
+                analyzePhoto(image)
+            }
         }
     }
     
