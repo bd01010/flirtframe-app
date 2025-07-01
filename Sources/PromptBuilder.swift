@@ -191,13 +191,4 @@ class PromptBuilder {
     }
 }
 
-struct SessionContext {
-    let preferences: UserSessionPreferences
-    let recentOpeners: [Opener]
-}
-
-struct UserSessionPreferences {
-    let tone: String
-    let avoidedTopics: [String]
-    let successfulOpeners: [String]
-}
+// SessionContext and UserSessionPreferences are defined in Models.swift

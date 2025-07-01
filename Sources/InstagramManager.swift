@@ -1,20 +1,7 @@
 import Foundation
 
 // Placeholder for Instagram functionality
-struct InstagramProfile {
-    let username: String
-    let bio: String?
-    let posts: [InstagramPost]
-    let interests: [String]
-    let extractedPersonality: PersonalityProfile?
-}
-
-struct InstagramPost {
-    let id: String
-    let caption: String?
-    let imageURL: URL?
-    let timestamp: Date
-}
+// InstagramProfile and InstagramPost are defined in Models.swift
 
 struct PersonalityProfile {
     let dominantTraits: [String]
@@ -29,9 +16,9 @@ class InstagramManager {
         return InstagramProfile(
             username: username,
             bio: "Mock bio",
-            posts: [],
             interests: [],
-            extractedPersonality: nil
+            embeddings: nil,
+            posts: []
         )
     }
 }

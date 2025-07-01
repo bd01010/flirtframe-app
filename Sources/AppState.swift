@@ -62,16 +62,13 @@ class AppState: ObservableObject {
     }
     
     private func saveSessionHistory() {
-        if let encoded = try? JSONEncoder().encode(sessionHistory) {
-            UserDefaults.standard.set(encoded, forKey: "sessionHistory")
-        }
+        // TODO: Implement persistence when SessionData is made Codable
+        // For now, session history is only kept in memory
     }
     
     private func loadSessionHistory() {
-        if let data = UserDefaults.standard.data(forKey: "sessionHistory"),
-           let decoded = try? JSONDecoder().decode([SessionData].self, from: data) {
-            sessionHistory = decoded
-        }
+        // TODO: Implement persistence when SessionData is made Codable
+        // For now, session history is only kept in memory
     }
 }
 
