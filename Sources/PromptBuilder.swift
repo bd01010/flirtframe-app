@@ -16,15 +16,12 @@ class PromptBuilder {
         
         """
         
-        // Add photo analysis context
         prompt += buildPhotoContext(from: analysis)
         
-        // Add Instagram profile context if available
         if let profile = profile {
             prompt += buildProfileContext(from: profile, analysis: analysis)
         }
         
-        // Add style preferences
         if let style = style {
             prompt += buildStyleGuidelines(for: style)
         } else {
@@ -34,10 +31,8 @@ class PromptBuilder {
             """
         }
         
-        // Add session context for personalization
         prompt += buildSessionContext(from: sessionContext)
         
-        // Add generation instructions
         prompt += """
         
         Generate 5 unique conversation starters based on the detailed observations above. Each opener should:
@@ -65,10 +60,8 @@ class PromptBuilder {
     private func buildPhotoContext(from analysis: AnalysisResult) -> String {
         var context = "\nDETAILED SCENE OBSERVATION:\n"
         
-        // Use the rich detailed description
         context += "\(analysis.detailedDescription)\n\n"
         
-        // Add specific interesting details
         context += "Notable visual elements:\n"
         
         for element in analysis.elements {
@@ -88,7 +81,6 @@ class PromptBuilder {
             }
         }
         
-        // Add atmosphere and unique features
         context += "\nAtmosphere: \(analysis.context.atmosphere)\n"
         if !analysis.context.uniqueDetails.isEmpty {
             context += "Unique details: \(analysis.context.uniqueDetails.joined(separator: ", "))\n"
@@ -101,7 +93,7 @@ class PromptBuilder {
     }
     
     private func buildProfileContext(from profile: InstagramProfile, analysis: AnalysisResult) -> String {
-        var context = "\n\nINSTAGRAM PROFILE:\n"
+        var context = "\n\nUSER PROFILE:\n"
         
         context += "Username: @\(profile.username)\n"
         
@@ -117,25 +109,6 @@ class PromptBuilder {
             context += "Personality traits: \(personality.dominantTraits.joined(separator: ", "))\n"
             context += "Communication style: \(personality.communicationStyle)\n"
             context += "Activity level: \(personality.activityLevel)\n"
-        }
-        
-        // Find connections between profile and photo
-        let embedder = ProfileEmbedder()
-        let matches = embedder.findMatchingElements(profile: profile, analysis: analysis)
-        
-        if !matches.isEmpty {
-            context += "\nConnections found between profile and photo:\n"
-            for match in matches.prefix(3) {
-                context += "- \(match.profileElement) relates to \(match.analysisElement)\n"
-            }
-        }
-        
-        // Add recent post themes
-        if !profile.posts.isEmpty {
-            let recentThemes = extractThemes(from: profile.posts)
-            if !recentThemes.isEmpty {
-                context += "\nRecent post themes: \(recentThemes.joined(separator: ", "))\n"
-            }
         }
         
         return context
@@ -208,143 +181,23 @@ class PromptBuilder {
     private func buildSessionContext(from context: SessionContext) -> String {
         var sessionInfo = "\n\nUSER PREFERENCES:\n"
         
-        // Add successful opener patterns
-        if !context.preferences.successfulOpeners.isEmpty {
-            sessionInfo += "Previously successful opener styles:\n"
-            let patterns = analyzePatterns(from: context.preferences.successfulOpeners)
-            for pattern in patterns {
-                sessionInfo += "- \(pattern)\n"
-            }
-        }
-        
-        // Add tone preference
         sessionInfo += "Preferred tone: \(context.preferences.tone)\n"
         
-        // Add topics to avoid
         if !context.preferences.avoidedTopics.isEmpty {
             sessionInfo += "Topics to avoid: \(context.preferences.avoidedTopics.joined(separator: ", "))\n"
         }
         
-        // Add recent themes to ensure variety
-        if !context.recentOpeners.isEmpty {
-            let recentThemes = extractThemes(from: context.recentOpeners)
-            sessionInfo += "Recent themes used (vary from these): \(recentThemes.joined(separator: ", "))\n"
-        }
-        
         return sessionInfo
     }
-    
-    private func describeElement(_ element: DetectedElement) -> String {
-        switch element.type {
-        case .person(let age, let gender, let details):
-            var description = "Person"
-            if let age = age {
-                description += " (appears \(age))"
-            }
-            if let gender = gender {
-                description += " \(gender)"
-            }
-            if !details.isEmpty {
-                description += " - \(details.joined(separator: ", "))"
-            }
-            return description
-            
-        case .object(let name, let details):
-            if details.isEmpty {
-                return "\(name) (object)"
-            }
-            return "\(name) with \(details.joined(separator: ", "))"
-            
-        case .scene(let name):
-            return "\(name) setting"
-            
-        case .activity(let name):
-            return "\(name) activity"
-            
-        case .text(let content):
-            return "Text: \"\(content)\""
-            
-        case .clothing(let item, let details):
-            if details.isEmpty {
-                return "\(item) (clothing)"
-            }
-            return "\(item) - \(details.joined(separator: ", "))"
-            
-        case .emotion(let emotion):
-            return "\(emotion) expression"
-            
-        case .aesthetic(let aspect, let details):
-            return "\(aspect): \(details.joined(separator: ", "))"
-            
-        case .cultural(let reference, let details):
-            return "\(reference) with \(details.joined(separator: ", "))"
-        }
-    }
-    
-    private func extractThemes(from posts: [InstagramPost]) -> [String] {
-        var themes = Set<String>()
-        
-        for post in posts.prefix(5) {
-            if let caption = post.caption?.lowercased() {
-                // Extract themes based on keywords
-                let themeKeywords: [String: String] = [
-                    "travel": "travel",
-                    "adventure": "adventure",
-                    "food": "foodie",
-                    "fitness": "fitness",
-                    "nature": "nature",
-                    "music": "music",
-                    "art": "art",
-                    "coffee": "coffee",
-                    "wine": "wine",
-                    "beach": "beach",
-                    "mountain": "outdoors"
-                ]
-                
-                for (keyword, theme) in themeKeywords {
-                    if caption.contains(keyword) {
-                        themes.insert(theme)
-                    }
-                }
-            }
-        }
-        
-        return Array(themes).prefix(3).map { $0 }
-    }
-    
-    private func extractThemes(from openers: [Opener]) -> [String] {
-        var themes = Set<String>()
-        
-        for opener in openers {
-            themes.formUnion(opener.tags)
-        }
-        
-        return Array(themes).prefix(5).map { $0 }
-    }
-    
-    private func analyzePatterns(from successfulOpeners: [String]) -> [String] {
-        var patterns: [String] = []
-        
-        // Analyze length
-        let avgLength = successfulOpeners.map { $0.count }.reduce(0, +) / max(successfulOpeners.count, 1)
-        if avgLength < 50 {
-            patterns.append("Short and punchy (under 50 characters)")
-        } else if avgLength > 100 {
-            patterns.append("Detailed and conversational")
-        }
-        
-        // Analyze question usage
-        let questionCount = successfulOpeners.filter { $0.contains("?") }.count
-        if questionCount > successfulOpeners.count / 2 {
-            patterns.append("Questions that encourage responses")
-        }
-        
-        // Analyze emoji usage
-        let emojiCount = successfulOpeners.filter { $0.contains(where: { $0.isEmoji }) }.count
-        if emojiCount > successfulOpeners.count / 2 {
-            patterns.append("Strategic emoji usage")
-        }
-        
-        return patterns
-    }
+}
+
+struct SessionContext {
+    let preferences: UserSessionPreferences
+    let recentOpeners: [Opener]
+}
+
+struct UserSessionPreferences {
+    let tone: String
+    let avoidedTopics: [String]
+    let successfulOpeners: [String]
 }
