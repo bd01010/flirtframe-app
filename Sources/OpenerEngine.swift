@@ -213,15 +213,17 @@ class OpenAIClient {
         temperature: Double = 0.7
     ) async throws -> String {
         
-        let url = URL(string: "\(baseURL)/completions")!
+        let url = URL(string: "\(baseURL)/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = [
-            "model": "gpt-3.5-turbo-instruct",
-            "prompt": prompt,
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                ["role": "user", "content": prompt]
+            ],
             "max_tokens": maxTokens,
             "temperature": temperature
         ]
@@ -233,8 +235,9 @@ class OpenAIClient {
         if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
            let choices = json["choices"] as? [[String: Any]],
            let firstChoice = choices.first,
-           let text = firstChoice["text"] as? String {
-            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+           let message = firstChoice["message"] as? [String: Any],
+           let content = message["content"] as? String {
+            return content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         
         throw OpenerEngineError.apiError("Failed to generate completion")
