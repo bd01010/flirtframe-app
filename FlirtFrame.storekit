@@ -1,0 +1,101 @@
+{
+  "identifier": "FlirtFrameStoreKit",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_billingIssuesEnabled": false,
+    "_storefront": "USA",
+    "_storeKitErrors": [],
+    "_subscriptionOffersEnabled": false
+  },
+  "subscriptionGroups": [
+    {
+      "id": "com.flirtframe.premium",
+      "localizations": [],
+      "name": "Premium Access",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "9.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "com.flirtframe.premium.monthly",
+          "introductoryOffer": {
+            "displayPrice": "0.99",
+            "internalID": "com.flirtframe.premium.monthly.intro",
+            "numberOfPeriods": 1,
+            "paymentMode": "payAsYouGo",
+            "subscriptionPeriod": "P1W",
+            "type": "introductory"
+          },
+          "localizations": [
+            {
+              "description": "Unlimited photo analyses and openers",
+              "displayName": "FlirtFrame Premium Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.flirtframe.premium.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Premium Monthly",
+          "subscriptionGroupID": "com.flirtframe.premium",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "79.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "com.flirtframe.premium.annual",
+          "introductoryOffer": {
+            "displayPrice": "9.99",
+            "internalID": "com.flirtframe.premium.annual.intro",
+            "numberOfPeriods": 1,
+            "paymentMode": "payAsYouGo",
+            "subscriptionPeriod": "P1M",
+            "type": "introductory"
+          },
+          "localizations": [
+            {
+              "description": "Best value - save 33%",
+              "displayName": "FlirtFrame Premium Annual",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.flirtframe.premium.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Premium Annual",
+          "subscriptionGroupID": "com.flirtframe.premium",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "com.flirtframe.premium.weekly",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Try premium for a week",
+              "displayName": "FlirtFrame Premium Weekly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.flirtframe.premium.weekly",
+          "recurringSubscriptionPeriod": "P1W",
+          "referenceName": "Premium Weekly",
+          "subscriptionGroupID": "com.flirtframe.premium",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

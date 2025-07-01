@@ -1,0 +1,52 @@
+{
+  "assetPacks": [
+    {
+      "id": "com.flirtframe.additionalopeners",
+      "name": "Additional Opener Styles",
+      "size": 2048000,
+      "version": "1.0",
+      "required": false,
+      "tags": ["openers", "content"],
+      "contents": [
+        "romantic_openers.json",
+        "adventurous_openers.json",
+        "intellectual_openers.json",
+        "seasonal_openers.json"
+      ]
+    },
+    {
+      "id": "com.flirtframe.premiummodels",
+      "name": "Premium AI Models",
+      "size": 15728640,
+      "version": "1.0",
+      "required": false,
+      "tags": ["ml", "premium"],
+      "contents": [
+        "enhanced_scene_classifier.mlmodel",
+        "activity_detector.mlmodel",
+        "emotion_analyzer.mlmodel"
+      ]
+    },
+    {
+      "id": "com.flirtframe.languages",
+      "name": "Additional Languages",
+      "size": 5242880,
+      "version": "1.0",
+      "required": false,
+      "tags": ["localization"],
+      "contents": [
+        "es.lproj/",
+        "fr.lproj/",
+        "de.lproj/",
+        "it.lproj/",
+        "pt.lproj/"
+      ]
+    }
+  ],
+  "configuration": {
+    "maxConcurrentDownloads": 2,
+    "cellularDownloadAllowed": false,
+    "backgroundDownloadAllowed": true,
+    "requiredFreeSpace": 52428800
+  }
+}

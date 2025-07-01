@@ -1,0 +1,107 @@
+{
+  "demoLines": [
+    {
+      "scenario": "beach_surfboard",
+      "elements": ["beach", "surfboard", "swimsuit"],
+      "openers": [
+        "I see you surf! I'm still mastering standing up on the board - any tips for a beginner who keeps face-planting? 🏄‍♂️",
+        "That board color is sick! Do you name your boards or is that just a weird thing I do?",
+        "Beach + surfboard = living the dream. What's the most memorable wave you've caught?",
+        "Plot twist: the surfboard is actually using you as a flotation device. Am I right? 😏",
+        "I bet you're the type who checks the surf report before the weather forecast"
+      ]
+    },
+    {
+      "scenario": "hiking_mountain",
+      "elements": ["mountain", "hiking gear", "outdoors"],
+      "openers": [
+        "That view looks incredible! Is this your 'I conquered this mountain' face or 'why did I agree to this' face?",
+        "I'm convinced hikers are just people who like suffering with better views. Which trail broke you in the best way?",
+        "Mountains or beaches - if you had to pick only one for the rest of your life?",
+        "That altitude makes my couch-to-5k achievement look pretty weak. What's next on your trail bucket list?",
+        "Please tell me there's a secret to looking that good after a hike. I usually look like I've been through a car wash"
+      ]
+    },
+    {
+      "scenario": "coffee_shop",
+      "elements": ["coffee", "cafe", "laptop"],
+      "openers": [
+        "Coffee shop laptop person! Are you actually working or just here for the aesthetic like the rest of us?",
+        "Important question: does pumpkin spice deserve the hate it gets or are people just jealous of its success?",
+        "I bet you have strong opinions about oat milk. Am I detecting fellow coffee snob energy?",
+        "That coffee art is too pretty to drink. How long do you usually stare at it before giving in?",
+        "Working from a coffee shop is 10% productivity, 90% people watching. What's the weirdest thing you've overheard?"
+      ]
+    },
+    {
+      "scenario": "dog_park",
+      "elements": ["dog", "park", "pet"],
+      "openers": [
+        "Okay but does your dog have an Instagram with more followers than you? Asking for a friend 👀",
+        "I'm convinced dogs are just permanent toddlers with better hair. What's the most ridiculous thing yours has done?",
+        "Your dog looks like they give great life advice. What wisdom have they shared lately?",
+        "Is this a 'my dog is my entire personality' situation? Because honestly, respect.",
+        "Dogs or cats? Choose wisely, this determines if we can be friends 😂"
+      ]
+    },
+    {
+      "scenario": "cooking_kitchen",
+      "elements": ["kitchen", "cooking", "food"],
+      "openers": [
+        "Is this a 'I actually cook' flex or a 'I posed with this pan for the gram' situation? Either way, I'm impressed",
+        "What's your signature dish that you make when you're trying to impress someone? I need to steal... I mean, learn recipes",
+        "Cooking skill check: have you ever set off the smoke alarm making toast? No? Just me?",
+        "That kitchen setup though! Are you accepting applications for official taste tester?",
+        "Gordon Ramsay walks in right now - what are you making that won't get you yelled at?"
+      ]
+    },
+    {
+      "scenario": "travel_airport",
+      "elements": ["airport", "luggage", "travel"],
+      "openers": [
+        "Airport photo means either exciting adventure or 'help I'm stuck in terminal C.' Which one is this?",
+        "Window seat or aisle? This says everything about a person's character 🤔",
+        "What's your travel superpower? Mine is always picking the security line that moves the slowest",
+        "I spy adventure energy! Where's the most random place you've ended up?",
+        "Are you a 'arrive 3 hours early' person or a 'sprint to the gate' person? There's no in between"
+      ]
+    },
+    {
+      "scenario": "concert_festival",
+      "elements": ["concert", "crowd", "music"],
+      "openers": [
+        "Concert pics always look fun but we both know you couldn't hear for 3 days after. Worth it though?",
+        "What's your move when your favorite song comes on? Full choreography or mysterious head nod?",
+        "Festival survival tips? I'm still recovering from my last one and that was 2019",
+        "Did you cry when they played that one song? It's okay, we all have that one song",
+        "Okay but did you actually watch the show or spend the whole time trying to get the perfect video?"
+      ]
+    },
+    {
+      "scenario": "wine_dinner",
+      "elements": ["wine", "restaurant", "dinner"],
+      "openers": [
+        "Wine person! Do you actually taste notes of oak and cherry or just nod along like the rest of us?",
+        "This looks like a 'I'm an adult who has their life together' photo. Teach me your ways?",
+        "First date spot or 'treating myself' vibes? Either way, that setup looks incredible",
+        "Red or white? And please don't say 'depends on the meal' - pick a side! 🍷",
+        "Is this before or after you decided ordering dessert was a personality trait? Because same"
+      ]
+    }
+  ],
+  "styleGuides": {
+    "witty": "Use clever wordplay and unexpected observations. Be smart but not pretentious.",
+    "playful": "Keep it light and fun. Use emojis sparingly but effectively. Include gentle teasing.",
+    "question": "Ask engaging, open-ended questions that invite storytelling.",
+    "observation": "Make specific, insightful comments that show attention to detail.",
+    "compliment": "Go beyond physical appearance. Notice choices, skills, or interests.",
+    "challenge": "Create friendly competitions or playful dares that encourage interaction."
+  },
+  "safetyRules": [
+    "Never comment on body or physical appearance in a sexual way",
+    "Avoid pickup lines that could be seen as creepy or aggressive",
+    "Don't make assumptions about relationship status or intentions",
+    "Keep initial messages friendly and appropriate",
+    "Respect boundaries and avoid overly personal questions"
+  ]
+}
