@@ -20,11 +20,7 @@ class ProfileEmbedder {
         
         textComponents.append(contentsOf: profile.interests)
         
-        if let personality = profile.extractedPersonality {
-            textComponents.append(contentsOf: personality.dominantTraits)
-            textComponents.append(personality.communicationStyle)
-            textComponents.append(personality.socialStyle)
-        }
+        // Note: extractedPersonality was removed from InstagramProfile
         
         let embeddings = textComponents.map { generateTextEmbedding($0) }
         return averageEmbeddings(embeddings)
@@ -57,8 +53,8 @@ class ProfileEmbedder {
     func findMatchingElements(profile: InstagramProfile, analysis: AnalysisResult) -> [ElementMatch] {
         var matches: [ElementMatch] = []
         
-        let profileEmbedding = Task { await generateEmbeddings(for: profile) }
-        let analysisEmbedding = generateEmbeddings(for: analysis)
+        // TODO: Implement matching logic
+        // This would compare embeddings between profile and analysis
         
         return matches
     }
@@ -73,7 +69,7 @@ class ProfileEmbedder {
         
         for word in words {
             if let vector = embedding.vector(for: word) {
-                vectors.append(vector)
+                vectors.append(vector.map { Float($0) })
             }
         }
         

@@ -105,11 +105,8 @@ class PromptBuilder {
             context += "Interests: \(profile.interests.joined(separator: ", "))\n"
         }
         
-        if let personality = profile.extractedPersonality {
-            context += "Personality traits: \(personality.dominantTraits.joined(separator: ", "))\n"
-            context += "Communication style: \(personality.communicationStyle)\n"
-            context += "Activity level: \(personality.activityLevel)\n"
-        }
+        // Note: extractedPersonality was removed from InstagramProfile
+        // This information would need to be derived from analysis of bio and posts
         
         return context
     }
