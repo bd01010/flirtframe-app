@@ -1,0 +1,113 @@
+name: Test Build Diagnostics
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Diagnose Build Issues
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check environment
+      run: |
+        echo "=== macOS Version ==="
+        sw_vers
+        echo ""
+        echo "=== Xcode Version ==="
+        xcodebuild -version
+        echo ""
+        echo "=== Available Simulators ==="
+        xcrun simctl list devices
+        echo ""
+        echo "=== Current Directory ==="
+        pwd
+        echo ""
+        echo "=== Directory Contents ==="
+        ls -la
+        
+    - name: Check for Info.plist
+      run: |
+        if [ -f "Info.plist" ]; then
+          echo "Info.plist found"
+          cat Info.plist
+        else
+          echo "Info.plist not found!"
+          echo "Creating Info.plist..."
+          cat > Info.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>CFBundleDevelopmentRegion</key>
+          <string>$(DEVELOPMENT_LANGUAGE)</string>
+          <key>CFBundleExecutable</key>
+          <string>$(EXECUTABLE_NAME)</string>
+          <key>CFBundleIdentifier</key>
+          <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+          <key>CFBundleInfoDictionaryVersion</key>
+          <string>6.0</string>
+          <key>CFBundleName</key>
+          <string>$(PRODUCT_NAME)</string>
+          <key>CFBundlePackageType</key>
+          <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+          <key>CFBundleShortVersionString</key>
+          <string>1.0</string>
+          <key>CFBundleVersion</key>
+          <string>1</string>
+          <key>LSRequiresIPhoneOS</key>
+          <true/>
+          <key>UILaunchStoryboardName</key>
+          <string>LaunchScreen</string>
+          <key>UIRequiredDeviceCapabilities</key>
+          <array>
+            <string>armv7</string>
+          </array>
+          <key>UISupportedInterfaceOrientations</key>
+          <array>
+            <string>UIInterfaceOrientationPortrait</string>
+          </array>
+        </dict>
+        </plist>
+        EOF
+        fi
+        
+    - name: Check project structure
+      run: |
+        echo "=== Project Files ==="
+        find . -name "*.xcodeproj" -o -name "*.xcworkspace" | head -20
+        echo ""
+        echo "=== Source Files ==="
+        find Sources -name "*.swift" | head -20
+        echo ""
+        echo "=== Checking xcodeproj contents ==="
+        ls -la FlirtFrame.xcodeproj/
+        
+    - name: Test simple build
+      run: |
+        echo "=== Attempting build ==="
+        set -e  # Exit on error
+        xcodebuild -scheme FlirtFrame \
+          -project FlirtFrame.xcodeproj \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          clean build \
+          -verbose 2>&1 | tee build.log | grep -E "(error:|warning:|FAILED|BUILD SUCCEEDED)" || true
+          
+        echo ""
+        echo "=== Build Exit Code: $? ==="
+        
+    - name: Upload diagnostic logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: diagnostic-logs
+        path: |
+          build.log
+          Info.plist
