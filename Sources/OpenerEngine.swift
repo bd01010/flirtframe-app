@@ -15,7 +15,7 @@ struct Opener {
     let tags: [String]
 }
 
-enum OpenerStyle: String, CaseIterable {
+enum OpenerStyle: String, CaseIterable, Codable {
     case witty = "Witty"
     case playful = "Playful"
     case compliment = "Compliment"
