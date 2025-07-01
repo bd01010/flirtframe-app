@@ -1,0 +1,65 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build iOS App
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Create Info.plist with API keys
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        # Add API key to Info.plist for the build
+        /usr/libexec/PlistBuddy -c "Add :OPENAI_API_KEY string '$OPENAI_API_KEY'" Info.plist || \
+        /usr/libexec/PlistBuddy -c "Set :OPENAI_API_KEY '$OPENAI_API_KEY'" Info.plist
+        
+    - name: Build app
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        xcodebuild -scheme FlirtFrame \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          build
+          
+    - name: Run tests
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        xcodebuild test -scheme FlirtFrame \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15'
+          
+    - name: Build for release
+      run: |
+        xcodebuild -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -archivePath $PWD/build/FlirtFrame.xcarchive \
+          archive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: FlirtFrame-Build
+        path: build/FlirtFrame.xcarchive
