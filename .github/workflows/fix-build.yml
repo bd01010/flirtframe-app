@@ -1,0 +1,129 @@
+name: Fix and Build iOS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Fix and Build iOS App
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Check file structure
+      run: |
+        echo "=== Current directory ==="
+        pwd
+        echo ""
+        echo "=== Directory structure ==="
+        ls -la
+        echo ""
+        echo "=== Sources directory ==="
+        ls -la Sources/ || echo "Sources directory not found!"
+        echo ""
+        echo "=== Swift files count ==="
+        find . -name "*.swift" | wc -l
+        
+    - name: Create/Update Info.plist
+      run: |
+        if [ ! -f "Info.plist" ]; then
+          echo "Creating Info.plist..."
+          cp /mnt/c/Users/J/ballparkpal-scraper/_flirtframe/Info.plist . || cat > Info.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.flirtframe.app</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>FlirtFrame</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>FlirtFrame needs camera access to analyze photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FlirtFrame needs photo library access.</string>
+</dict>
+</plist>
+EOF
+        fi
+        
+    - name: Add API key to Info.plist
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        /usr/libexec/PlistBuddy -c "Add :OPENAI_API_KEY string '$OPENAI_API_KEY'" Info.plist || \
+        /usr/libexec/PlistBuddy -c "Set :OPENAI_API_KEY '$OPENAI_API_KEY'" Info.plist
+        
+    - name: Clean build directory
+      run: |
+        xcodebuild clean -project FlirtFrame.xcodeproj -scheme FlirtFrame
+        
+    - name: Build app with detailed logging
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        set -o pipefail
+        xcodebuild -scheme FlirtFrame \
+          -project FlirtFrame.xcodeproj \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -derivedDataPath build \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          ONLY_ACTIVE_ARCH=NO \
+          build | xcpretty --simple --color --report junit
+          
+    - name: Check build output
+      if: always()
+      run: |
+        echo "=== Build products ==="
+        find build -name "*.app" -type d | head -10
+        echo ""
+        echo "=== Swift module files ==="
+        find build -name "*.swiftmodule" | head -10
+        echo ""
+        echo "=== Object files ==="
+        find build -name "*.o" | wc -l
+        
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-output
+        path: |
+          build/
+          build-output.txt
