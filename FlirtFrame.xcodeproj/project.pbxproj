@@ -7,85 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8B1234561234567890ABCDEF /* FlirtFrameApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234551234567890ABCDEF /* FlirtFrameApp.swift */; };
-		8B1234581234567890ABCDEF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234571234567890ABCDEF /* ContentView.swift */; };
-		8B12345A1234567890ABCDEF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B1234591234567890ABCDEF /* Assets.xcassets */; };
-		8B12345D1234567890ABCDEF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B12345C1234567890ABCDEF /* Preview Assets.xcassets */; };
-		8B1234641234567890ABCDEF /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234631234567890ABCDEF /* OnboardingView.swift */; };
-		8B1234661234567890ABCDEF /* CameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234651234567890ABCDEF /* CameraScreen.swift */; };
-		8B1234681234567890ABCDEF /* PhotoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234671234567890ABCDEF /* PhotoAnalyzer.swift */; };
-		8B12346A1234567890ABCDEF /* OpenerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234691234567890ABCDEF /* OpenerEngine.swift */; };
-		8B12346C1234567890ABCDEF /* OpenerResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12346B1234567890ABCDEF /* OpenerResultView.swift */; };
-		8B12346E1234567890ABCDEF /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12346D1234567890ABCDEF /* HistoryView.swift */; };
-		8B1234701234567890ABCDEF /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12346F1234567890ABCDEF /* PaywallView.swift */; };
-		8B1234721234567890ABCDEF /* SafetyFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234711234567890ABCDEF /* SafetyFilter.swift */; };
-		8B1234741234567890ABCDEF /* SessionMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234731234567890ABCDEF /* SessionMemory.swift */; };
-		8B1234761234567890ABCDEF /* InstagramManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234751234567890ABCDEF /* InstagramManager.swift */; };
-		8B1234781234567890ABCDEF /* ProfileEmbedder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234771234567890ABCDEF /* ProfileEmbedder.swift */; };
-		8B12347A1234567890ABCDEF /* PromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234791234567890ABCDEF /* PromptBuilder.swift */; };
-		8B12347C1234567890ABCDEF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12347B1234567890ABCDEF /* SettingsView.swift */; };
-		8B12347E1234567890ABCDEF /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12347D1234567890ABCDEF /* AppState.swift */; };
-		8B1234801234567890ABCDEF /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12347F1234567890ABCDEF /* PurchaseManager.swift */; };
-		8B1234821234567890ABCDEF /* TinyDemoLines.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B1234811234567890ABCDEF /* TinyDemoLines.json */; };
-		8B1234841234567890ABCDEF /* AssetPackManifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B1234831234567890ABCDEF /* AssetPackManifest.json */; };
-		8B1234861234567890ABCDEF /* FlirtFrame.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 8B1234851234567890ABCDEF /* FlirtFrame.storekit */; };
-		8B1234881234567890ABCDEF /* PhotoAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234871234567890ABCDEF /* PhotoAnalyzerTests.swift */; };
-		8B12348A1234567890ABCDEF /* SafetyFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1234891234567890ABCDEF /* SafetyFilterTests.swift */; };
-		8B12348C1234567890ABCDEF /* SessionMemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12348B1234567890ABCDEF /* SessionMemoryTests.swift */; };
-		8B12348E1234567890ABCDEF /* PromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B12348D1234567890ABCDEF /* PromptBuilderTests.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B2B /* AppDelegate.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1B /* CameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B2C /* CameraScreen.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1C /* PhotoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B2D /* PhotoAnalyzer.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1D /* OpenerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B2E /* OpenerEngine.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1E /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B2F /* AppState.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A1F /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B30 /* Configuration.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A20 /* OpenerResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B31 /* OpenerResultView.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		8B1234901234567890ABCDEF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 8B12344A1234567890ABCDEF /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 8B1234511234567890ABCDEF;
-			remoteInfo = FlirtFrame;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		8B1234521234567890ABCDEF /* FlirtFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlirtFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8B1234551234567890ABCDEF /* FlirtFrameApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlirtFrameApp.swift; sourceTree = "<group>"; };
-		8B1234571234567890ABCDEF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		8B1234591234567890ABCDEF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		8B12345C1234567890ABCDEF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		8B12345E1234567890ABCDEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		8B1234631234567890ABCDEF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		8B1234651234567890ABCDEF /* CameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraScreen.swift; sourceTree = "<group>"; };
-		8B1234671234567890ABCDEF /* PhotoAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAnalyzer.swift; sourceTree = "<group>"; };
-		8B1234691234567890ABCDEF /* OpenerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenerEngine.swift; sourceTree = "<group>"; };
-		8B12346B1234567890ABCDEF /* OpenerResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenerResultView.swift; sourceTree = "<group>"; };
-		8B12346D1234567890ABCDEF /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		8B12346F1234567890ABCDEF /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		8B1234711234567890ABCDEF /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
-		8B1234731234567890ABCDEF /* SessionMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionMemory.swift; sourceTree = "<group>"; };
-		8B1234751234567890ABCDEF /* InstagramManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramManager.swift; sourceTree = "<group>"; };
-		8B1234771234567890ABCDEF /* ProfileEmbedder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEmbedder.swift; sourceTree = "<group>"; };
-		8B1234791234567890ABCDEF /* PromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilder.swift; sourceTree = "<group>"; };
-		8B12347B1234567890ABCDEF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		8B12347D1234567890ABCDEF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		8B12347F1234567890ABCDEF /* PurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseManager.swift; sourceTree = "<group>"; };
-		8B1234811234567890ABCDEF /* TinyDemoLines.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TinyDemoLines.json; sourceTree = "<group>"; };
-		8B1234831234567890ABCDEF /* AssetPackManifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = AssetPackManifest.json; sourceTree = "<group>"; };
-		8B1234851234567890ABCDEF /* FlirtFrame.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = FlirtFrame.storekit; sourceTree = "<group>"; };
-		8B1234871234567890ABCDEF /* PhotoAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAnalyzerTests.swift; sourceTree = "<group>"; };
-		8B1234891234567890ABCDEF /* SafetyFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilterTests.swift; sourceTree = "<group>"; };
-		8B12348B1234567890ABCDEF /* SessionMemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionMemoryTests.swift; sourceTree = "<group>"; };
-		8B12348D1234567890ABCDEF /* PromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilderTests.swift; sourceTree = "<group>"; };
-		8B12348F1234567890ABCDEF /* FlirtFrameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlirtFrameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B1B1B1B1B1B1B1B1B1B1B1B /* FlirtFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlirtFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B2B2B2B2B2B2B2B2B2B2B2B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B2C /* CameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraScreen.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B2D /* PhotoAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAnalyzer.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B2E /* OpenerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenerEngine.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B2F /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B30 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B31 /* OpenerResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenerResultView.swift; sourceTree = "<group>"; };
+		2B2B2B2B2B2B2B2B2B2B2B32 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		8B12344F1234567890ABCDEF /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8B1234921234567890ABCDEF /* Frameworks */ = {
+		3C3C3C3C3C3C3C3C3C3C3C3C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -95,91 +39,47 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		8B1234491234567890ABCDEF = {
+		4D4D4D4D4D4D4D4D4D4D4D4D = {
 			isa = PBXGroup;
 			children = (
-				8B1234541234567890ABCDEF /* Sources */,
-				8B1234951234567890ABCDEF /* Resources */,
-				8B1234961234567890ABCDEF /* Tests */,
-				8B1234531234567890ABCDEF /* Products */,
+				5E5E5E5E5E5E5E5E5E5E5E5E /* Sources */,
+				6F6F6F6F6F6F6F6F6F6F6F6F /* Products */,
+				2B2B2B2B2B2B2B2B2B2B2B32 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
-		8B1234531234567890ABCDEF /* Products */ = {
+		5E5E5E5E5E5E5E5E5E5E5E5E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				8B1234521234567890ABCDEF /* FlirtFrame.app */,
-				8B12348F1234567890ABCDEF /* FlirtFrameTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		8B1234541234567890ABCDEF /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				8B1234551234567890ABCDEF /* FlirtFrameApp.swift */,
-				8B1234571234567890ABCDEF /* ContentView.swift */,
-				8B1234631234567890ABCDEF /* OnboardingView.swift */,
-				8B1234651234567890ABCDEF /* CameraScreen.swift */,
-				8B12346B1234567890ABCDEF /* OpenerResultView.swift */,
-				8B12346D1234567890ABCDEF /* HistoryView.swift */,
-				8B12346F1234567890ABCDEF /* PaywallView.swift */,
-				8B12347B1234567890ABCDEF /* SettingsView.swift */,
-				8B1234671234567890ABCDEF /* PhotoAnalyzer.swift */,
-				8B1234691234567890ABCDEF /* OpenerEngine.swift */,
-				8B1234711234567890ABCDEF /* SafetyFilter.swift */,
-				8B1234731234567890ABCDEF /* SessionMemory.swift */,
-				8B1234751234567890ABCDEF /* InstagramManager.swift */,
-				8B1234771234567890ABCDEF /* ProfileEmbedder.swift */,
-				8B1234791234567890ABCDEF /* PromptBuilder.swift */,
-				8B12347D1234567890ABCDEF /* AppState.swift */,
-				8B12347F1234567890ABCDEF /* PurchaseManager.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B2B /* AppDelegate.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B2C /* CameraScreen.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B2D /* PhotoAnalyzer.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B2E /* OpenerEngine.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B2F /* AppState.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B30 /* Configuration.swift */,
+				2B2B2B2B2B2B2B2B2B2B2B31 /* OpenerResultView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		8B12345B1234567890ABCDEF /* Preview Content */ = {
+		6F6F6F6F6F6F6F6F6F6F6F6F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8B12345C1234567890ABCDEF /* Preview Assets.xcassets */,
+				1B1B1B1B1B1B1B1B1B1B1B1B /* FlirtFrame.app */,
 			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		8B1234951234567890ABCDEF /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				8B1234591234567890ABCDEF /* Assets.xcassets */,
-				8B12345E1234567890ABCDEF /* Info.plist */,
-				8B1234811234567890ABCDEF /* TinyDemoLines.json */,
-				8B1234831234567890ABCDEF /* AssetPackManifest.json */,
-				8B1234851234567890ABCDEF /* FlirtFrame.storekit */,
-				8B12345B1234567890ABCDEF /* Preview Content */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		8B1234961234567890ABCDEF /* Tests */ = {
-			isa = PBXGroup;
-			children = (
-				8B1234871234567890ABCDEF /* PhotoAnalyzerTests.swift */,
-				8B1234891234567890ABCDEF /* SafetyFilterTests.swift */,
-				8B12348B1234567890ABCDEF /* SessionMemoryTests.swift */,
-				8B12348D1234567890ABCDEF /* PromptBuilderTests.swift */,
-			);
-			path = Tests;
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8B1234511234567890ABCDEF /* FlirtFrame */ = {
+		7A7A7A7A7A7A7A7A7A7A7A7A /* FlirtFrame */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8B1234601234567890ABCDEF /* Build configuration list for PBXNativeTarget "FlirtFrame" */;
+			buildConfigurationList = 8B8B8B8B8B8B8B8B8B8B8B8B /* Build configuration list for PBXNativeTarget "FlirtFrame" */;
 			buildPhases = (
-				8B12344E1234567890ABCDEF /* Sources */,
-				8B12344F1234567890ABCDEF /* Frameworks */,
-				8B1234501234567890ABCDEF /* Resources */,
+				9C9C9C9C9C9C9C9C9C9C9C9C /* Sources */,
+				3C3C3C3C3C3C3C3C3C3C3C3C /* Frameworks */,
+				ADADADADADADADADADADADAD /* Resources */,
 			);
 			buildRules = (
 			);
@@ -187,47 +87,25 @@
 			);
 			name = FlirtFrame;
 			productName = FlirtFrame;
-			productReference = 8B1234521234567890ABCDEF /* FlirtFrame.app */;
+			productReference = 1B1B1B1B1B1B1B1B1B1B1B1B /* FlirtFrame.app */;
 			productType = "com.apple.product-type.application";
-		};
-		8B12348E1234567890ABCDEF /* FlirtFrameTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 8B1234971234567890ABCDEF /* Build configuration list for PBXNativeTarget "FlirtFrameTests" */;
-			buildPhases = (
-				8B1234911234567890ABCDEF /* Sources */,
-				8B1234921234567890ABCDEF /* Frameworks */,
-				8B1234931234567890ABCDEF /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				8B1234941234567890ABCDEF /* PBXTargetDependency */,
-			);
-			name = FlirtFrameTests;
-			productName = FlirtFrameTests;
-			productReference = 8B12348F1234567890ABCDEF /* FlirtFrameTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		8B12344A1234567890ABCDEF /* Project object */ = {
+		4D4D4D4D4D4D4D4D4D4D4D4E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
-					8B1234511234567890ABCDEF = {
+					7A7A7A7A7A7A7A7A7A7A7A7A = {
 						CreatedOnToolsVersion = 15.0;
-					};
-					8B12348E1234567890ABCDEF = {
-						CreatedOnToolsVersion = 15.0;
-						TestTargetID = 8B1234511234567890ABCDEF;
 					};
 				};
 			};
-			buildConfigurationList = 8B12344D1234567890ABCDEF /* Build configuration list for PBXProject "FlirtFrame" */;
+			buildConfigurationList = BEBEBEBEBEBEBEBEBEBEBEBE /* Build configuration list for PBXProject "FlirtFrame" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -235,31 +113,18 @@
 				en,
 				Base,
 			);
-			mainGroup = 8B1234491234567890ABCDEF;
-			productRefGroup = 8B1234531234567890ABCDEF /* Products */;
+			mainGroup = 4D4D4D4D4D4D4D4D4D4D4D4D;
+			productRefGroup = 6F6F6F6F6F6F6F6F6F6F6F6F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8B1234511234567890ABCDEF /* FlirtFrame */,
-				8B12348E1234567890ABCDEF /* FlirtFrameTests */,
+				7A7A7A7A7A7A7A7A7A7A7A7A /* FlirtFrame */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8B1234501234567890ABCDEF /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8B12345D1234567890ABCDEF /* Preview Assets.xcassets in Resources */,
-				8B12345A1234567890ABCDEF /* Assets.xcassets in Resources */,
-				8B1234821234567890ABCDEF /* TinyDemoLines.json in Resources */,
-				8B1234841234567890ABCDEF /* AssetPackManifest.json in Resources */,
-				8B1234861234567890ABCDEF /* FlirtFrame.storekit in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8B1234931234567890ABCDEF /* Resources */ = {
+		ADADADADADADADADADADADAD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -269,59 +134,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		8B12344E1234567890ABCDEF /* Sources */ = {
+		9C9C9C9C9C9C9C9C9C9C9C9C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B1234581234567890ABCDEF /* ContentView.swift in Sources */,
-				8B1234561234567890ABCDEF /* FlirtFrameApp.swift in Sources */,
-				8B1234641234567890ABCDEF /* OnboardingView.swift in Sources */,
-				8B1234661234567890ABCDEF /* CameraScreen.swift in Sources */,
-				8B1234681234567890ABCDEF /* PhotoAnalyzer.swift in Sources */,
-				8B12346A1234567890ABCDEF /* OpenerEngine.swift in Sources */,
-				8B12346C1234567890ABCDEF /* OpenerResultView.swift in Sources */,
-				8B12346E1234567890ABCDEF /* HistoryView.swift in Sources */,
-				8B1234701234567890ABCDEF /* PaywallView.swift in Sources */,
-				8B1234721234567890ABCDEF /* SafetyFilter.swift in Sources */,
-				8B1234741234567890ABCDEF /* SessionMemory.swift in Sources */,
-				8B1234761234567890ABCDEF /* InstagramManager.swift in Sources */,
-				8B1234781234567890ABCDEF /* ProfileEmbedder.swift in Sources */,
-				8B12347A1234567890ABCDEF /* PromptBuilder.swift in Sources */,
-				8B12347C1234567890ABCDEF /* SettingsView.swift in Sources */,
-				8B12347E1234567890ABCDEF /* AppState.swift in Sources */,
-				8B1234801234567890ABCDEF /* PurchaseManager.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8B1234911234567890ABCDEF /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8B1234881234567890ABCDEF /* PhotoAnalyzerTests.swift in Sources */,
-				8B12348A1234567890ABCDEF /* SafetyFilterTests.swift in Sources */,
-				8B12348C1234567890ABCDEF /* SessionMemoryTests.swift in Sources */,
-				8B12348E1234567890ABCDEF /* PromptBuilderTests.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1A /* AppDelegate.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1B /* CameraScreen.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1C /* PhotoAnalyzer.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1D /* OpenerEngine.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1E /* AppState.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A1F /* Configuration.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A20 /* OpenerResultView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		8B1234941234567890ABCDEF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 8B1234511234567890ABCDEF /* FlirtFrame */;
-			targetProxy = 8B1234901234567890ABCDEF /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		8B12345F1234567890ABCDEF /* Debug */ = {
+		CFCFCFCFCFCFCFCFCFCFCFCF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -352,8 +186,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -368,23 +201,20 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		8B1234601234567890ABCDEF /* Release */ = {
+		DEDEDEDEDEDEDEDEDEDEDEDE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -415,8 +245,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -425,33 +254,29 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		8B1234611234567890ABCDEF /* Debug */ = {
+		EFEFEFEFEFEFEFEFEFEFEFEF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Resources/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Resources/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "FlirtFrame needs camera access to analyze photos and generate personalized conversation openers.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FlirtFrame needs photo library access to analyze your selected photos and generate personalized conversation openers.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -465,24 +290,20 @@
 			};
 			name = Debug;
 		};
-		8B1234621234567890ABCDEF /* Release */ = {
+		F0F0F0F0F0F0F0F0F0F0F0F0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Resources/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Resources/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "FlirtFrame needs camera access to analyze photos and generate personalized conversation openers.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FlirtFrame needs photo library access to analyze your selected photos and generate personalized conversation openers.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -493,76 +314,31 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		8B1234981234567890ABCDEF /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.flirtframe.FlirtFrameTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FlirtFrame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FlirtFrame";
-			};
-			name = Debug;
-		};
-		8B1234991234567890ABCDEF /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.flirtframe.FlirtFrameTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FlirtFrame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FlirtFrame";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		8B12344D1234567890ABCDEF /* Build configuration list for PBXProject "FlirtFrame" */ = {
+		BEBEBEBEBEBEBEBEBEBEBEBE /* Build configuration list for PBXProject "FlirtFrame" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8B12345F1234567890ABCDEF /* Debug */,
-				8B1234601234567890ABCDEF /* Release */,
+				CFCFCFCFCFCFCFCFCFCFCFCF /* Debug */,
+				DEDEDEDEDEDEDEDEDEDEDEDE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8B1234601234567890ABCDEF /* Build configuration list for PBXNativeTarget "FlirtFrame" */ = {
+		8B8B8B8B8B8B8B8B8B8B8B8B /* Build configuration list for PBXNativeTarget "FlirtFrame" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8B1234611234567890ABCDEF /* Debug */,
-				8B1234621234567890ABCDEF /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		8B1234971234567890ABCDEF /* Build configuration list for PBXNativeTarget "FlirtFrameTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				8B1234981234567890ABCDEF /* Debug */,
-				8B1234991234567890ABCDEF /* Release */,
+				EFEFEFEFEFEFEFEFEFEFEFEF /* Debug */,
+				F0F0F0F0F0F0F0F0F0F0F0F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 8B12344A1234567890ABCDEF /* Project object */;
+	rootObject = 4D4D4D4D4D4D4D4D4D4D4D4E /* Project object */;
 }
