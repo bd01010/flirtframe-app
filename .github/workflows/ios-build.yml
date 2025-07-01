@@ -20,96 +20,41 @@ jobs:
       with:
         xcode-version: latest-stable
         
-    - name: Create simple Xcode project
+    - name: Create Info.plist with API keys
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        # Create a basic iOS app project structure
-        mkdir -p FlirtFrameApp
-        
-        # Create main app file
-        cat > FlirtFrameApp/main.swift << 'EOF'
-        import UIKit
-        
-        UIApplicationMain(
-            CommandLine.argc,
-            CommandLine.unsafeArgv,
-            nil,
-            NSStringFromClass(AppDelegate.self)
-        )
-        EOF
-        
-        # Copy source files
-        cp -r Sources/* FlirtFrameApp/
-        
-        # Create module map
-        cat > FlirtFrameApp/module.modulemap << 'EOF'
-        module FlirtFrame {
-            header "FlirtFrame-Bridging-Header.h"
-            export *
-        }
-        EOF
-        
-        # Create bridging header
-        touch FlirtFrameApp/FlirtFrame-Bridging-Header.h
-        
-        # Create simple xcodeproj using Swift
-        cat > create_project.swift << 'EOF'
-        import Foundation
-        
-        let fileManager = FileManager.default
-        let currentPath = fileManager.currentDirectoryPath
-        
-        // Create build script
-        let buildScript = """
-        #!/bin/bash
-        
-        # Compile all Swift files
-        swiftc -target x86_64-apple-ios16.0-simulator \\
-          -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \\
-          -emit-executable \\
-          -o FlirtFrame \\
-          FlirtFrameApp/*.swift \\
-          -import-objc-header FlirtFrameApp/FlirtFrame-Bridging-Header.h \\
-          -emit-module -emit-module-path . \\
-          -parse-as-library
-        """
-        
-        try buildScript.write(toFile: "build.sh", atomically: true, encoding: .utf8)
-        
-        // Make it executable
-        let task = Process()
-        task.launchPath = "/bin/chmod"
-        task.arguments = ["+x", "build.sh"]
-        task.launch()
-        task.waitUntilExit()
-        
-        print("Build script created")
-        EOF
-        
-        swift create_project.swift
+        # Add API key to Info.plist for the build
+        /usr/libexec/PlistBuddy -c "Add :OPENAI_API_KEY string '$OPENAI_API_KEY'" Info.plist || \
+        /usr/libexec/PlistBuddy -c "Set :OPENAI_API_KEY '$OPENAI_API_KEY'" Info.plist
         
     - name: Build app
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        # Use xcodebuild with generic iOS project
-        xcodebuild -create-xcframework \
-          -framework FlirtFrameApp \
-          -output FlirtFrame.xcframework || true
+        xcodebuild -scheme FlirtFrame \
+          -project FlirtFrame.xcodeproj \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -derivedDataPath build \
+          build
           
-        # If that fails, compile directly
-        if [ ! -d "FlirtFrame.xcframework" ]; then
-          echo "Using direct compilation..."
-          chmod +x build.sh
-          ./build.sh
-        fi
-        
-    - name: Create build artifact
+    - name: Build for release
       run: |
-        mkdir -p build
-        zip -r build/FlirtFrame.zip FlirtFrameApp/ *.swift
-        
+        xcodebuild -scheme FlirtFrame \
+          -project FlirtFrame.xcodeproj \
+          -configuration Release \
+          -sdk iphoneos \
+          -derivedDataPath build \
+          -archivePath $PWD/build/FlirtFrame.xcarchive \
+          archive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: FlirtFrame-Build
-        path: build/FlirtFrame.zip
+        path: build/
