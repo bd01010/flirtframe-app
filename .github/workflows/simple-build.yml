@@ -1,0 +1,41 @@
+name: Simple iOS Build Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: List project contents
+      run: |
+        echo "=== Project root ==="
+        ls -la
+        echo ""
+        echo "=== Xcode project ==="
+        ls -la FlirtFrame.xcodeproj/
+        echo ""
+        echo "=== Sources ==="
+        ls -la Sources/
+        echo ""
+        echo "=== Check for Info.plist ==="
+        ls -la Info.plist || echo "Info.plist not found"
+        
+    - name: Simple build attempt
+      run: |
+        xcodebuild -list -project FlirtFrame.xcodeproj
+        echo ""
+        echo "=== Attempting build ==="
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -sdk iphonesimulator \
+          -configuration Debug \
+          ONLY_ACTIVE_ARCH=NO \
+          -verbose 2>&1 | grep -E "(CompileSwift|\.swift|error:|warning:|BUILD)" || true
