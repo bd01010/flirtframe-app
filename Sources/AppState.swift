@@ -5,6 +5,7 @@ class AppState: ObservableObject {
     @Published var analysisCount = 0
     @Published var isPremium = false
     @Published var userPreferences = UserPreferences()
+    @Published var sessionHistory: [SessionData] = []
     
     let openerEngine: OpenerEngine
     private var feedbackHistory: [String: Bool] = [:] // openerId: isPositive
@@ -12,6 +13,7 @@ class AppState: ObservableObject {
     init() {
         self.openerEngine = OpenerEngine(apiKey: Configuration.openAIAPIKey)
         loadUserPreferences()
+        loadSessionHistory()
     }
     
     func trackAnalysis() {
@@ -41,6 +43,34 @@ class AppState: ObservableObject {
     private func saveUserPreferences() {
         if let data = try? JSONEncoder().encode(userPreferences) {
             UserDefaults.standard.set(data, forKey: "userPreferences")
+        }
+    }
+    
+    // Session History Management
+    func addSession(_ session: SessionData) {
+        sessionHistory.insert(session, at: 0)
+        // Keep only last 50 sessions
+        if sessionHistory.count > 50 {
+            sessionHistory.removeLast()
+        }
+        saveSessionHistory()
+    }
+    
+    func deleteSession(at offsets: IndexSet) {
+        sessionHistory.remove(atOffsets: offsets)
+        saveSessionHistory()
+    }
+    
+    private func saveSessionHistory() {
+        if let encoded = try? JSONEncoder().encode(sessionHistory) {
+            UserDefaults.standard.set(encoded, forKey: "sessionHistory")
+        }
+    }
+    
+    private func loadSessionHistory() {
+        if let data = UserDefaults.standard.data(forKey: "sessionHistory"),
+           let decoded = try? JSONDecoder().decode([SessionData].self, from: data) {
+            sessionHistory = decoded
         }
     }
 }
