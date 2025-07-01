@@ -6,6 +6,7 @@ class AppState: ObservableObject {
     @Published var isPremium = false
     @Published var userPreferences = UserPreferences()
     @Published var sessionHistory: [SessionData] = []
+    @Published var hasCompletedOnboarding = false
     
     let openerEngine: OpenerEngine
     private var feedbackHistory: [String: Bool] = [:] // openerId: isPositive
@@ -14,6 +15,7 @@ class AppState: ObservableObject {
         self.openerEngine = OpenerEngine(apiKey: Configuration.openAIAPIKey)
         loadUserPreferences()
         loadSessionHistory()
+        loadOnboardingStatus()
     }
     
     func trackAnalysis() {
@@ -69,6 +71,16 @@ class AppState: ObservableObject {
     private func loadSessionHistory() {
         // TODO: Implement persistence when SessionData is made Codable
         // For now, session history is only kept in memory
+    }
+    
+    // Onboarding Management
+    func completeOnboarding() {
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+    }
+    
+    private func loadOnboardingStatus() {
+        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
     }
 }
 
