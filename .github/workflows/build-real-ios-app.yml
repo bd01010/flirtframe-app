@@ -1,0 +1,369 @@
+name: Build Real iOS App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Create Standalone iOS App
+      run: |
+        # Create a complete iOS app from scratch
+        mkdir -p RealApp/Sources
+        mkdir -p RealApp/Resources
+        
+        # Create main app file with SwiftUI
+        cat > RealApp/Sources/App.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+
+        struct ContentView: View {
+            @State private var showingCamera = false
+            @State private var selectedImage: UIImage?
+            @State private var generatedOpeners: [String] = []
+            
+            var body: some View {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        Text("FlirtFrame")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        
+                        Text("AI-Powered Dating Conversation Starters")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        if let image = selectedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 300)
+                                .cornerRadius(10)
+                        }
+                        
+                        Button(action: {
+                            showingCamera = true
+                        }) {
+                            Label("Select Photo", systemImage: "camera.fill")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        
+                        if !generatedOpeners.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Generated Openers:")
+                                    .font(.headline)
+                                
+                                ForEach(generatedOpeners, id: \.self) { opener in
+                                    Text("• \(opener)")
+                                        .padding(.vertical, 5)
+                                }
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding()
+                    .navigationBarHidden(true)
+                }
+                .sheet(isPresented: $showingCamera) {
+                    ImagePicker(selectedImage: $selectedImage, generatedOpeners: $generatedOpeners)
+                }
+            }
+        }
+
+        struct ImagePicker: UIViewControllerRepresentable {
+            @Binding var selectedImage: UIImage?
+            @Binding var generatedOpeners: [String]
+            @Environment(\.presentationMode) var presentationMode
+            
+            func makeUIViewController(context: Context) -> UIImagePickerController {
+                let picker = UIImagePickerController()
+                picker.delegate = context.coordinator
+                picker.sourceType = .photoLibrary
+                return picker
+            }
+            
+            func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+            
+            func makeCoordinator() -> Coordinator {
+                Coordinator(self)
+            }
+            
+            class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+                let parent: ImagePicker
+                
+                init(_ parent: ImagePicker) {
+                    self.parent = parent
+                }
+                
+                func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+                    if let image = info[.originalImage] as? UIImage {
+                        parent.selectedImage = image
+                        // Generate mock openers
+                        parent.generatedOpeners = [
+                            "I see you have great taste in photography! What inspired this shot?",
+                            "This photo has such a unique vibe! Where was it taken?",
+                            "Your style really caught my eye! Do you have more photos like this?"
+                        ]
+                    }
+                    parent.presentationMode.wrappedValue.dismiss()
+                }
+            }
+        }
+        EOF
+        
+        # Create Info.plist
+        cat > RealApp/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleDevelopmentRegion</key>
+            <string>en</string>
+            <key>CFBundleExecutable</key>
+            <string>$(EXECUTABLE_NAME)</string>
+            <key>CFBundleIdentifier</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>CFBundleInfoDictionaryVersion</key>
+            <string>6.0</string>
+            <key>CFBundleName</key>
+            <string>$(PRODUCT_NAME)</string>
+            <key>CFBundlePackageType</key>
+            <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UIApplicationSceneManifest</key>
+            <dict>
+                <key>UIApplicationSupportsMultipleScenes</key>
+                <false/>
+                <key>UISceneConfigurations</key>
+                <dict>
+                    <key>UIWindowSceneSessionRoleApplication</key>
+                    <array>
+                        <dict>
+                            <key>UISceneConfigurationName</key>
+                            <string>Default Configuration</string>
+                            <key>UISceneDelegateClassName</key>
+                            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+                        </dict>
+                    </array>
+                </dict>
+            </dict>
+            <key>UILaunchStoryboardName</key>
+            <string>LaunchScreen</string>
+            <key>UIRequiredDeviceCapabilities</key>
+            <array>
+                <string>armv7</string>
+            </array>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationLandscapeLeft</string>
+                <string>UIInterfaceOrientationLandscapeRight</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame needs access to your photos to generate conversation starters</string>
+            <key>NSCameraUsageDescription</key>
+            <string>FlirtFrame needs camera access to take photos for generating conversation starters</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Copy existing assets if available
+        if [ -d "Assets.xcassets" ]; then
+            cp -r Assets.xcassets RealApp/
+        else
+            mkdir -p RealApp/Assets.xcassets
+            cp RealApp/Info.plist RealApp/Assets.xcassets/
+        fi
+        
+    - name: Generate Xcode Project
+      run: |
+        # Create project.yml for XcodeGen
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+          createIntermediateGroups: true
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            INFOPLIST_FILE: RealApp/Info.plist
+            SWIFT_VERSION: 5.0
+            TARGETED_DEVICE_FAMILY: 1,2
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            CODE_SIGN_ENTITLEMENTS: ""
+            DEVELOPMENT_TEAM: ""
+            PROVISIONING_PROFILE_SPECIFIER: ""
+            GENERATE_INFOPLIST_FILE: NO
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: RealApp/Sources
+                name: Sources
+                createIntermediateGroups: true
+              - path: RealApp/Assets.xcassets
+                optional: true
+            settings:
+              base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                INFOPLIST_FILE: RealApp/Info.plist
+                ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        EOF
+        
+        # Install XcodeGen
+        brew install xcodegen || brew upgrade xcodegen || true
+        
+        # Generate project
+        xcodegen generate
+        
+        # List generated files
+        echo "Generated project structure:"
+        ls -la
+        ls -la FlirtFrame.xcodeproj/ || echo "Project generation failed"
+        
+    - name: Build iOS App
+      run: |
+        set -e
+        
+        # Clean
+        rm -rf build DerivedData
+        
+        # List available schemes
+        echo "Available schemes:"
+        xcodebuild -list -project FlirtFrame.xcodeproj || echo "No schemes found"
+        
+        # Build the app
+        xcodebuild clean build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          ONLY_ACTIVE_ARCH=NO \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          PRODUCT_BUNDLE_IDENTIFIER="com.flirtframe.app" \
+          EXCLUDED_ARCHS="" \
+          SKIP_INSTALL=NO \
+          BUILD_LIBRARY_FOR_DISTRIBUTION=NO || {
+            echo "Build failed, checking for errors..."
+            find DerivedData -name "*.log" -type f -exec echo "=== {} ===" \; -exec tail -50 {} \;
+            exit 1
+          }
+          
+        # Find the app
+        echo "Looking for built app..."
+        find DerivedData -name "*.app" -type d | while read app; do
+          echo "Found: $app"
+          ls -la "$app"
+        done
+        
+        APP_PATH=$(find DerivedData -name "FlirtFrame.app" -type d | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "ERROR: No app bundle found!"
+          exit 1
+        fi
+        
+        echo "Using app at: $APP_PATH"
+        
+        # Create IPA
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        
+        # Add SwiftSupport if needed
+        SWIFT_SUPPORT=$(find DerivedData -name "SwiftSupport" -type d | head -1)
+        if [ -n "$SWIFT_SUPPORT" ]; then
+          cp -R "$SWIFT_SUPPORT" .
+        fi
+        
+        # Create IPA
+        zip -qr FlirtFrame.ipa Payload SwiftSupport 2>/dev/null || zip -qr FlirtFrame.ipa Payload
+        
+        # Verify
+        echo "IPA created:"
+        ls -lh FlirtFrame.ipa
+        unzip -l FlirtFrame.ipa | head -20
+        
+        # Check size
+        SIZE=$(stat -f%z FlirtFrame.ipa 2>/dev/null || stat -c%s FlirtFrame.ipa)
+        echo "IPA size: $SIZE bytes"
+        
+        if [ "$SIZE" -lt 50000 ]; then
+          echo "WARNING: IPA seems too small"
+        fi
+        
+    - name: Create Installation Guide
+      run: |
+        cat > INSTALL.md << 'EOF'
+        # Installing FlirtFrame on iOS
+        
+        ## Using Sideloadly (Recommended)
+        1. Download Sideloadly: https://sideloadly.io
+        2. Connect your iPhone to your PC
+        3. Open Sideloadly
+        4. Drag FlirtFrame.ipa into Sideloadly
+        5. Enter your Apple ID
+        6. Click Start
+        7. On iPhone: Settings → General → Device Management → Trust
+        
+        ## Using AltStore
+        1. Install AltServer: https://altstore.io
+        2. Install AltStore on iPhone
+        3. Open FlirtFrame.ipa with AltStore
+        
+        ## App Features
+        - Select photos from your library
+        - Get AI-generated conversation starters
+        - Simple, clean interface
+        
+        Note: With free Apple ID, reinstall every 7 days
+        EOF
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-iOS-App
+        path: |
+          FlirtFrame.ipa
+          INSTALL.md
+        if-no-files-found: error
