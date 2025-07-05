@@ -1,0 +1,161 @@
+name: Minimal Working Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Create Minimal App
+      run: |
+        echo "📱 Creating minimal iOS app..."
+        
+        # Backup Firebase files
+        mv Sources/Firebase Sources/Firebase.backup || true
+        mv Sources/AppDelegate.swift Sources/AppDelegate.swift.backup || true
+        
+        # Create minimal app
+        cat > Sources/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        EOF
+        
+        # Create minimal ContentView if missing
+        if [ ! -f "Sources/ContentView.swift" ]; then
+          cat > Sources/ContentView.swift << 'EOF'
+        import SwiftUI
+
+        struct ContentView: View {
+            var body: some View {
+                VStack {
+                    Image(systemName: "heart.fill")
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
+                    Text("FlirtFrame")
+                }
+                .padding()
+            }
+        }
+        EOF
+        fi
+        
+        # Create minimal AppState if missing
+        if [ ! -f "Sources/AppState.swift" ]; then
+          cat > Sources/AppState.swift << 'EOF'
+        import Foundation
+
+        class AppState: ObservableObject {
+            @Published var isLoading = false
+        }
+        EOF
+        fi
+        
+    - name: Create Project
+      run: |
+        echo "🔧 Creating Xcode project..."
+        
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                excludes:
+                  - "**/*.backup"
+                  - "Firebase/**"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+                optional: true
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+        EOF
+        
+        # Install and run xcodegen
+        brew install xcodegen || brew upgrade xcodegen
+        xcodegen generate
+        
+    - name: Build App
+      run: |
+        echo "🔨 Building minimal app..."
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO || {
+            echo "❌ Build failed"
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        echo "📦 Creating IPA..."
+        
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ No app bundle found!"
+          exit 1
+        fi
+        
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-Minimal.ipa Payload
+        
+        echo "✅ IPA created!"
+        ls -lh FlirtFrame-Minimal.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Minimal-Working
+        path: FlirtFrame-Minimal.ipa
+        if-no-files-found: error
+        retention-days: 7

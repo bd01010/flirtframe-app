@@ -14,6 +14,11 @@ if [ -f "Package.swift" ]; then
     echo "✅ Package.swift found"
     echo "   Dependencies:"
     grep -A5 "dependencies:" Package.swift | grep "package:" | sed 's/^/   /'
+    if grep -q '"-ObjC"' Package.swift; then
+        echo "   ✅ Has -ObjC linker flag"
+    else
+        echo "   ⚠️  Missing -ObjC linker flag"
+    fi
 else
     echo "❌ Package.swift missing"
 fi
@@ -28,19 +33,24 @@ fi
 echo -e "\n📱 Checking Swift files:"
 if [ -f "Sources/FlirtFrameApp.swift" ]; then
     echo "✅ FlirtFrameApp.swift found"
-    if grep -q "import Firebase" Sources/FlirtFrameApp.swift; then
-        echo "   ⚠️  Direct Firebase import detected"
+    if grep -q "@UIApplicationDelegateAdaptor" Sources/FlirtFrameApp.swift; then
+        echo "   ✅ Uses UIApplicationDelegateAdaptor"
     else
-        echo "   ✅ Uses FirebaseSetup (conditional import)"
+        echo "   ⚠️  Missing UIApplicationDelegateAdaptor"
     fi
 else
     echo "❌ FlirtFrameApp.swift missing"
 fi
 
-if [ -f "Sources/Firebase/FirebaseSetup.swift" ]; then
-    echo "✅ FirebaseSetup.swift found"
+if [ -f "Sources/AppDelegate.swift" ]; then
+    echo "✅ AppDelegate.swift found"
+    if grep -q "FirebaseApp.configure()" Sources/AppDelegate.swift; then
+        echo "   ✅ Calls FirebaseApp.configure()"
+    else
+        echo "   ⚠️  Missing FirebaseApp.configure()"
+    fi
 else
-    echo "❌ FirebaseSetup.swift missing"
+    echo "❌ AppDelegate.swift missing"
 fi
 
 if [ -f "Sources/Firebase/FirebaseManager.swift" ]; then

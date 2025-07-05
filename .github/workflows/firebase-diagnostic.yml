@@ -1,0 +1,132 @@
+name: Firebase Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  diagnose:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Check Environment
+      run: |
+        echo "🔍 Diagnostic Information:"
+        echo "========================="
+        
+        echo -e "\n📱 Xcode Version:"
+        xcodebuild -version
+        
+        echo -e "\n📦 Swift Version:"
+        swift --version
+        
+        echo -e "\n📋 Files Check:"
+        echo "GoogleService-Info.plist exists: $([ -f GoogleService-Info.plist ] && echo '✅' || echo '❌')"
+        echo "Package.swift exists: $([ -f Package.swift ] && echo '✅' || echo '❌')"
+        echo "Info.plist exists: $([ -f Info.plist ] && echo '✅' || echo '❌')"
+        echo "Assets.xcassets exists: $([ -f Assets.xcassets ] && echo '✅' || echo '❌')"
+        
+        echo -e "\n📂 Source Files:"
+        find Sources -name "*.swift" -type f | sort
+        
+    - name: Test Swift Package
+      run: |
+        echo -e "\n🧪 Testing Swift Package Resolution..."
+        
+        # Try to resolve packages
+        swift package resolve && echo "✅ Package resolution successful" || {
+          echo "❌ Package resolution failed"
+          echo -e "\nPackage.swift content:"
+          cat Package.swift
+        }
+        
+    - name: Test Simple Build
+      run: |
+        echo -e "\n🔨 Testing Simple Swift Build..."
+        
+        # Create a minimal test project
+        mkdir -p TestBuild
+        cd TestBuild
+        
+        # Create Package.swift
+        cat > Package.swift << 'EOF'
+        // swift-tools-version: 5.9
+        import PackageDescription
+        
+        let package = Package(
+            name: "TestFirebase",
+            platforms: [.iOS(.v16)],
+            products: [
+                .library(name: "TestFirebase", targets: ["TestFirebase"]),
+            ],
+            dependencies: [
+                .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.20.0"),
+            ],
+            targets: [
+                .target(
+                    name: "TestFirebase",
+                    dependencies: [
+                        .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
+                    ]
+                ),
+            ]
+        )
+        EOF
+        
+        # Create source file
+        mkdir -p Sources/TestFirebase
+        cat > Sources/TestFirebase/Test.swift << 'EOF'
+        import Foundation
+        
+        public struct Test {
+            public init() {}
+        }
+        EOF
+        
+        # Try to build
+        swift build && echo "✅ Test build successful" || echo "❌ Test build failed"
+        
+    - name: Test XcodeGen Project
+      run: |
+        echo -e "\n🔧 Testing XcodeGen with minimal project..."
+        
+        # Create minimal project.yml
+        cat > minimal.yml << 'EOF'
+        name: MinimalTest
+        options:
+          bundleIdPrefix: com.test
+        targets:
+          MinimalTest:
+            type: application
+            platform: iOS
+            sources: [Sources]
+        EOF
+        
+        # Install xcodegen if needed
+        brew list xcodegen || brew install xcodegen
+        
+        # Generate and check
+        xcodegen generate --spec minimal.yml --project MinimalTest
+        
+        [ -d "MinimalTest.xcodeproj" ] && echo "✅ XcodeGen works" || echo "❌ XcodeGen failed"
+        
+    - name: Check Package Dependencies
+      run: |
+        echo -e "\n📦 Checking Firebase package availability..."
+        
+        # Test if we can fetch Firebase package info
+        curl -s "https://api.github.com/repos/firebase/firebase-ios-sdk/releases/latest" | python3 -c "
+        import json, sys
+        data = json.load(sys.stdin)
+        print(f'Latest Firebase iOS SDK: {data.get(\"tag_name\", \"Unknown\")}')
+        print(f'Released: {data.get(\"published_at\", \"Unknown\")}')
+        "
