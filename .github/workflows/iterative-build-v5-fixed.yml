@@ -1,0 +1,270 @@
+name: Iterative Build v5 Fixed - Models with Dependencies
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 5 Fixed - Models with All Dependencies
+      run: |
+        echo "🎯 Step 5 Fixed: Adding Models.swift with proper stubs..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        rm -rf BuildSourceV5Fixed
+        
+        # Create build directory
+        mkdir -p BuildSourceV5Fixed
+        
+        # Working v2 base
+        cat > BuildSourceV5Fixed/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var selectedImage: UIImage?
+            @State private var sessionData: [SessionData] = []
+            
+            var body: some View {
+                VStack(spacing: 20) {
+                    Text("FlirtFrame")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    Text("Sessions: \(sessionData.count)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 300)
+                            .cornerRadius(10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 300)
+                            .overlay(
+                                Text("No photo selected")
+                                    .foregroundColor(.gray)
+                            )
+                    }
+                    
+                    PhotosPicker(
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label("Select Photo", systemImage: "photo")
+                            .font(.title3)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .onChange(of: selectedItem) { newItem in
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                selectedImage = image
+                                // Create test session
+                                let opener = Opener(
+                                    text: "Great photo!",
+                                    style: "Casual",
+                                    confidence: 0.9
+                                )
+                                let session = SessionData(
+                                    openers: [opener],
+                                    photoData: data
+                                )
+                                sessionData.append(session)
+                            }
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        EOF
+        
+        # Copy Models.swift and check what it needs
+        echo "Checking Models.swift dependencies..."
+        grep -E "struct|class|enum" Sources/Models.swift | head -20
+        
+        # Copy real Models.swift
+        cp Sources/Models.swift BuildSourceV5Fixed/Models.swift
+        
+        # Add ALL missing types that Models.swift needs
+        cat > BuildSourceV5Fixed/ModelDependencies.swift << 'EOF'
+        import Foundation
+        import UIKit
+        
+        // From OpenerEngine.swift
+        struct Opener: Identifiable {
+            let id = UUID()
+            let text: String
+            let style: String
+            let confidence: Double
+            
+            init(text: String, style: String, confidence: Double = 0.8) {
+                self.text = text
+                self.style = style
+                self.confidence = confidence
+            }
+        }
+        
+        // From PhotoAnalyzer.swift
+        struct PhotoContext {
+            let description: String
+            let mood: String
+            let elements: [String]
+            
+            init(description: String = "", mood: String = "", elements: [String] = []) {
+                self.description = description
+                self.mood = mood
+                self.elements = elements
+            }
+        }
+        
+        struct AnalysisResult {
+            let elements: [DetectedElement]
+            let sceneDescription: String
+            let dominantColors: [UIColor]
+            let mood: String
+            
+            init(elements: [DetectedElement] = [], sceneDescription: String = "", dominantColors: [UIColor] = [], mood: String = "") {
+                self.elements = elements
+                self.sceneDescription = sceneDescription
+                self.dominantColors = dominantColors
+                self.mood = mood
+            }
+        }
+        
+        struct DetectedElement {
+            let type: ElementType
+            let confidence: Float
+            let bounds: CGRect
+            let attributes: [String: Any]
+            
+            init(type: ElementType, confidence: Float = 0.8, bounds: CGRect = .zero, attributes: [String: Any] = [:]) {
+                self.type = type
+                self.confidence = confidence
+                self.bounds = bounds
+                self.attributes = attributes
+            }
+        }
+        
+        enum ElementType {
+            case person
+            case object(String)
+            case text(String)
+            case scene(String)
+        }
+        EOF
+        
+        # Info.plist
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>5</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame needs access to your photos</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Project
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_FILE: Info.plist
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: BuildSourceV5Fixed
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+        EOF
+        
+        echo "✅ Files ready:"
+        ls -la BuildSourceV5Fixed/
+        
+    - name: Generate and Build
+      run: |
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_REQUIRED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -v debug | head -1)
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v5-fixed.ipa Payload
+        ls -lh FlirtFrame-v5-fixed.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v5-Fixed
+        path: FlirtFrame-v5-fixed.ipa
