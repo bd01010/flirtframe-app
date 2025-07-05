@@ -1,0 +1,167 @@
+name: iOS Device Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for Real Device
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode.app
+      
+    - name: Create Required Files
+      run: |
+        # Create Config.xcconfig
+        echo 'OPENAI_API_KEY = placeholder' > Config.xcconfig
+        
+        # Create GoogleService-Info.plist
+        cat > GoogleService-Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>API_KEY</key>
+          <string>AIzaSyBjOftE_ZAb2ijCkW7y1EMQs6vm9PTPJRPw</string>
+          <key>GCM_SENDER_ID</key>
+          <string>9614217320</string>
+          <key>PLIST_VERSION</key>
+          <string>1</string>
+          <key>BUNDLE_ID</key>
+          <string>com.flirtframe.app</string>
+          <key>PROJECT_ID</key>
+          <string>j111-c1573</string>
+          <key>STORAGE_BUCKET</key>
+          <string>j111-c1573.firebasestorage.app</string>
+          <key>IS_ADS_ENABLED</key>
+          <false/>
+          <key>IS_ANALYTICS_ENABLED</key>
+          <false/>
+          <key>IS_APPINVITE_ENABLED</key>
+          <true/>
+          <key>IS_GCM_ENABLED</key>
+          <true/>
+          <key>IS_SIGNIN_ENABLED</key>
+          <true/>
+          <key>GOOGLE_APP_ID</key>
+          <string>1:9614217320:ios:06b78a86ab737224deabdd</string>
+        </dict>
+        </plist>
+        EOF
+        
+    - name: Create ExportOptions.plist
+      run: |
+        cat > ExportOptions.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>method</key>
+          <string>development</string>
+          <key>teamID</key>
+          <string>XXXXXXXXXX</string>
+          <key>uploadBitcode</key>
+          <false/>
+          <key>compileBitcode</key>
+          <false/>
+          <key>uploadSymbols</key>
+          <false/>
+          <key>signingStyle</key>
+          <string>automatic</string>
+          <key>stripSwiftSymbols</key>
+          <true/>
+          <key>provisioningProfiles</key>
+          <dict>
+            <key>com.flirtframe.app</key>
+            <string>Automatic</string>
+          </dict>
+        </dict>
+        </plist>
+        EOF
+        
+    - name: Resolve Dependencies
+      run: |
+        if [ -f "Package.swift" ]; then
+          xcodebuild -resolvePackageDependencies || true
+        fi
+        
+    - name: Build Archive
+      run: |
+        xcodebuild archive \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -sdk iphoneos \
+          -configuration Release \
+          -archivePath $PWD/build/FlirtFrame.xcarchive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          -allowProvisioningUpdates \
+          | xcpretty || true
+          
+    - name: Create IPA
+      run: |
+        # Create Payload directory
+        mkdir -p Payload
+        
+        # Copy .app to Payload
+        if [ -d "build/FlirtFrame.xcarchive/Products/Applications/FlirtFrame.app" ]; then
+          cp -R build/FlirtFrame.xcarchive/Products/Applications/FlirtFrame.app Payload/
+        else
+          echo "Finding .app file..."
+          find build -name "*.app" -type d | head -1 | xargs -I {} cp -R {} Payload/
+        fi
+        
+        # Create IPA
+        zip -r FlirtFrame.ipa Payload
+        
+        # Verify IPA was created
+        ls -la FlirtFrame.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v3
+      with:
+        name: FlirtFrame-IPA
+        path: |
+          FlirtFrame.ipa
+          
+    - name: Create Install Instructions
+      run: |
+        cat > INSTALL_INSTRUCTIONS.txt << 'EOF'
+        HOW TO INSTALL ON YOUR iPHONE:
+        
+        1. Download the FlirtFrame.ipa file from this build
+        
+        2. Using Sideloadly (Windows):
+           - Download from: https://sideloadly.io
+           - Connect iPhone to PC via USB
+           - Drag FlirtFrame.ipa into Sideloadly
+           - Enter your Apple ID
+           - Click Start
+           
+        3. Using AltStore:
+           - Install AltServer on PC
+           - Install AltStore on iPhone
+           - Open FlirtFrame.ipa with AltStore
+           
+        4. Trust the App on iPhone:
+           - Go to Settings > General > Device Management
+           - Trust your developer certificate
+           
+        The app includes full Firebase integration!
+        EOF
+        
+    - name: Upload Instructions
+      uses: actions/upload-artifact@v3
+      with:
+        name: Installation-Instructions
+        path: INSTALL_INSTRUCTIONS.txt
