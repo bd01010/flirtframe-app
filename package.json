@@ -1,0 +1,14 @@
+{
+  "name": "flirtframe-firebase-test",
+  "version": "1.0.0",
+  "description": "Test Firebase setup for FlirtFrame",
+  "main": "test_firebase_locally.js",
+  "scripts": {
+    "test": "node test_firebase_locally.js",
+    "emulators": "firebase emulators:start",
+    "emulators:export": "firebase emulators:export ./emulator-data"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0"
+  }
+}

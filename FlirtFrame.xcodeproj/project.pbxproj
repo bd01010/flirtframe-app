@@ -26,6 +26,9 @@
 		1A1A1A1A1A1A1A1A1A1A1A2A /* ProfileEmbedder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B3B /* ProfileEmbedder.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A2B /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B3C /* PurchaseManager.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A2C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B2B2B2B2B2B2B2B2B2B2B3E /* Models.swift */; };
+		65F907FE14944D349E579D10 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FC149C844E11442C802AE6F0 /* GoogleService-Info.plist */; };
+		D2524AB401994EF2B3464A8A /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A170FBC5D8524F7B877C47C4 /* FirebaseManager.swift */; };
+		01F17B73AC594E1889DA2527 /* FirebaseIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C820DA23B284A3D99FC323E /* FirebaseIntegration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +53,9 @@
 		2B2B2B2B2B2B2B2B2B2B2B3C /* PurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseManager.swift; sourceTree = "<group>"; };
 		2B2B2B2B2B2B2B2B2B2B2B3D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2B2B2B2B2B2B2B2B2B2B2B3E /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		FC149C844E11442C802AE6F0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		A170FBC5D8524F7B877C47C4 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
+		6C820DA23B284A3D99FC323E /* FirebaseIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseIntegration.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +74,7 @@
 			children = (
 				5E5E5E5E5E5E5E5E5E5E5E5E /* Sources */,
 				6F6F6F6F6F6F6F6F6F6F6F6F /* Products */,
+				FC149C844E11442C802AE6F0 /* GoogleService-Info.plist */,
 				2B2B2B2B2B2B2B2B2B2B2B3D /* Info.plist */,
 			);
 			sourceTree = "<group>";
@@ -94,8 +101,18 @@
 				2B2B2B2B2B2B2B2B2B2B2B3B /* ProfileEmbedder.swift */,
 				2B2B2B2B2B2B2B2B2B2B2B3C /* PurchaseManager.swift */,
 				2B2B2B2B2B2B2B2B2B2B2B3E /* Models.swift */,
+				D63F9AAB72F548048ACCF0BD /* Firebase */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		D63F9AAB72F548048ACCF0BD /* Firebase */ = {
+			isa = PBXGroup;
+			children = (
+				A170FBC5D8524F7B877C47C4 /* FirebaseManager.swift */,
+				6C820DA23B284A3D99FC323E /* FirebaseIntegration.swift */,
+			);
+			path = Firebase;
 			sourceTree = "<group>";
 		};
 		6F6F6F6F6F6F6F6F6F6F6F6F /* Products */ = {
@@ -116,7 +133,8 @@
 				9C9C9C9C9C9C9C9C9C9C9C9C /* Sources */,
 				3C3C3C3C3C3C3C3C3C3C3C3C /* Frameworks */,
 				ADADADADADADADADADADADAD /* Resources */,
-			);
+			,
+				B0C15A3DD9A049C5A2971B54 /* Upload dSYM to Crashlytics */);
 			buildRules = (
 			);
 			dependencies = (
@@ -164,10 +182,33 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				65F907FE14944D349E579D10 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+/* Begin PBXShellScriptBuildPhase section */
+		B0C15A3DD9A049C5A2971B54 /* Upload dSYM to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Upload dSYM to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Firebase Crashlytics dSYM upload\nif [ -d \"${PODS_ROOT}/FirebaseCrashlytics\" ]; then\n  \"${PODS_ROOT}/FirebaseCrashlytics/run\"\nelse\n  echo \"warning: Firebase Crashlytics not found. Skipping dSYM upload.\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9C9C9C9C9C9C9C9C9C9C9C9C /* Sources */ = {
@@ -193,6 +234,8 @@
 				1A1A1A1A1A1A1A1A1A1A1A2A /* ProfileEmbedder.swift in Sources */,
 				1A1A1A1A1A1A1A1A1A1A1A2B /* PurchaseManager.swift in Sources */,
 				1A1A1A1A1A1A1A1A1A1A1A2C /* Models.swift in Sources */,
+				D2524AB401994EF2B3464A8A /* FirebaseManager.swift in Sources */,
+				01F17B73AC594E1889DA2527 /* FirebaseIntegration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

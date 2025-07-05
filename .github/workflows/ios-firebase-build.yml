@@ -1,0 +1,54 @@
+name: iOS Firebase Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode.app
+      
+    - name: Install Firebase Tools
+      run: |
+        brew install firebase-cli
+        
+    - name: Decode GoogleService-Info.plist
+      env:
+        GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
+      run: |
+        echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > GoogleService-Info.plist
+        
+    - name: Resolve Dependencies
+      run: |
+        xcodebuild -resolvePackageDependencies -scheme FlirtFrame
+        
+    - name: Build
+      run: |
+        xcodebuild build \
+          -scheme FlirtFrame \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15'
+          
+    - name: Run Tests
+      run: |
+        xcodebuild test \
+          -scheme FlirtFrame \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -only-testing:FlirtFrameTests
+          
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          build/
+          DerivedData/

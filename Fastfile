@@ -4,10 +4,20 @@ default_platform(:ios)
 
 platform :ios do
   
+  # Setup Firebase lane
+  desc "Download GoogleService-Info.plist for Firebase"
+  lane :setup_firebase do
+    # Ensure GoogleService-Info.plist is present
+    unless File.exist?("../GoogleService-Info.plist")
+      UI.error("GoogleService-Info.plist not found! Please add it to the project root.")
+    end
+  end
+  
   # Beta deployment lane
   desc "Deploy a new beta build to TestFlight"
   lane :beta do
     ensure_git_status_clean
+    setup_firebase
     
     # Increment build number
     increment_build_number(xcodeproj: "FlirtFrame.xcodeproj")
