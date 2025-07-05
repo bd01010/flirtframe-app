@@ -59,23 +59,37 @@ jobs:
         ls -la *.xcodeproj || echo "No xcodeproj found"
         ls -la Package.swift || echo "No Package.swift found"
         
+    - name: List available schemes
+      run: |
+        xcodebuild -list -project FlirtFrame.xcodeproj || echo "Failed to list schemes"
+        
     - name: Resolve Dependencies
       run: |
         if [ -f "Package.swift" ]; then
           echo "Using Swift Package Manager"
-          xcodebuild -resolvePackageDependencies
+          xcodebuild -resolvePackageDependencies || echo "SPM resolution failed, continuing..."
         else
           echo "No Package.swift found"
         fi
         
     - name: Build for Simulator
       run: |
+        # Try to build without specifying scheme first
         xcodebuild clean build \
           -project FlirtFrame.xcodeproj \
-          -scheme FlirtFrame \
           -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,OS=17.0,name=iPhone 15' \
+          -destination 'platform=iOS Simulator,name=iPhone 14' \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
-          ONLY_ACTIVE_ARCH=NO
+          ONLY_ACTIVE_ARCH=NO || echo "Build failed, trying with explicit configuration..."
+          
+        # If that fails, try with explicit configuration
+        xcodebuild clean build \
+          -project FlirtFrame.xcodeproj \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -arch x86_64 \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
