@@ -1,0 +1,205 @@
+name: Iterative Build v2 - Add Photo Picker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 2 - Add Photo Picker
+      run: |
+        echo "🎯 Step 2: Adding photo picker to working base..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        
+        # Create source directory
+        mkdir -p EnhancedSource
+        
+        # Add photo picker functionality
+        cat > EnhancedSource/App.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var selectedImage: UIImage?
+            
+            var body: some View {
+                VStack(spacing: 20) {
+                    Text("FlirtFrame")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 300)
+                            .cornerRadius(10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 300)
+                            .overlay(
+                                Text("No photo selected")
+                                    .foregroundColor(.gray)
+                            )
+                    }
+                    
+                    PhotosPicker(
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label("Select Photo", systemImage: "photo")
+                            .font(.title3)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .onChange(of: selectedItem) { newItem in
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                selectedImage = image
+                            }
+                        }
+                    }
+                    
+                    if selectedImage != nil {
+                        Button("Generate Openers") {
+                            print("Generate openers for image")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        EOF
+        
+        # Update Info.plist with photo permissions
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleDisplayName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>2</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame needs access to your photos to generate conversation starters</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Same project structure as v1
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          createIntermediateGroups: true
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0
+            CURRENT_PROJECT_VERSION: 2
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_STYLE: Manual
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            PROVISIONING_PROFILE_SPECIFIER: ""
+            INFOPLIST_FILE: Info.plist
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            SWIFT_VERSION: 5.0
+            TARGETED_DEVICE_FAMILY: 1,2
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            deploymentTarget: 16.0
+            sources:
+              - path: EnhancedSource
+                name: Sources
+                includes:
+                  - "**/*.swift"
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+        EOF
+        
+    - name: Generate and Build
+      run: |
+        brew install xcodegen || brew upgrade xcodegen || true
+        xcodegen generate --spec project.yml
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath "$PWD/DerivedData" \
+          ONLY_ACTIVE_ARCH=NO \
+          ARCHS="arm64" \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v2.ipa Payload
+        
+        echo "✅ Photo picker added successfully!"
+        ls -lh FlirtFrame-v2.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v2-PhotoPicker
+        path: FlirtFrame-v2.ipa
+        if-no-files-found: error
