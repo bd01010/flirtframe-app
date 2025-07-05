@@ -1,0 +1,224 @@
+name: Iterative Build v5 - Add Real Models
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 5 - Add Real Models.swift
+      run: |
+        echo "🎯 Step 5: Adding real Models.swift to working v2 base..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        rm -rf BuildSourceV5
+        
+        # Create build directory
+        mkdir -p BuildSourceV5
+        
+        # Start with v2's working photo picker app
+        cat > BuildSourceV5/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var selectedImage: UIImage?
+            
+            var body: some View {
+                VStack(spacing: 20) {
+                    Text("FlirtFrame")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 300)
+                            .cornerRadius(10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 300)
+                            .overlay(
+                                Text("No photo selected")
+                                    .foregroundColor(.gray)
+                            )
+                    }
+                    
+                    PhotosPicker(
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label("Select Photo", systemImage: "photo")
+                            .font(.title3)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .onChange(of: selectedItem) { newItem in
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                selectedImage = image
+                            }
+                        }
+                    }
+                    
+                    if selectedImage != nil {
+                        Button("Generate Openers") {
+                            print("Generate openers for image")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        EOF
+        
+        # Copy real Models.swift
+        cp Sources/Models.swift BuildSourceV5/Models.swift
+        
+        # Create stub for Opener since it's referenced but might be in OpenerEngine.swift
+        if ! grep -q "struct Opener" BuildSourceV5/Models.swift; then
+          cat >> BuildSourceV5/Models.swift << 'EOF'
+        
+        // MARK: - Opener (stub until OpenerEngine is added)
+        struct Opener: Identifiable {
+            let id = UUID()
+            let text: String
+            let style: String
+            let confidence: Double
+        }
+        EOF
+        fi
+        
+        # Create stub for PhotoContext if referenced
+        cat > BuildSourceV5/PhotoContextStub.swift << 'EOF'
+        import Foundation
+        
+        // Stub for PhotoContext until PhotoAnalyzer is added
+        struct PhotoContext {
+            let description: String
+            let mood: String
+            let elements: [String]
+        }
+        EOF
+        
+        # Info.plist with photo permissions
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleDisplayName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>5</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame needs access to your photos to generate conversation starters</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Project configuration
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_FILE: Info.plist
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: BuildSourceV5
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+        EOF
+        
+        echo "✅ Added real Models.swift"
+        echo "Files in build:"
+        ls -la BuildSourceV5/
+        
+    - name: Generate and Build
+      run: |
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_REQUIRED=NO || {
+            echo "Build failed. Checking what went wrong..."
+            # Show any compilation errors
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -v debug | head -1)
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v5.ipa Payload
+        ls -lh FlirtFrame-v5.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v5-Real-Models
+        path: FlirtFrame-v5.ipa
+        if-no-files-found: error
