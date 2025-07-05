@@ -1,4 +1,7 @@
 import Foundation
+import Combine
+
+#if canImport(Firebase)
 import Firebase
 import FirebaseAuth
 import FirebaseFirestore
@@ -7,33 +10,43 @@ import FirebaseCrashlytics
 import FirebaseRemoteConfig
 import FirebasePerformance
 import FirebaseStorage
-import Combine
+#endif
 
 class FirebaseManager: ObservableObject {
     static let shared = FirebaseManager()
     
-    @Published var user: User?
+    @Published var user: Any? = nil
     @Published var isAuthenticated = false
-    @Published var remoteConfig: RemoteConfig
     
+    #if canImport(Firebase)
+    @Published var remoteConfig: RemoteConfig
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
     private let performance = Performance.sharedInstance()
     private var authStateListener: AuthStateDidChangeListenerHandle?
+    #endif
+    
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
+        #if canImport(Firebase)
         self.remoteConfig = RemoteConfig.remoteConfig()
         setupRemoteConfig()
         setupAuthStateListener()
+        #else
+        print("⚠️ Firebase SDK not available - using stub implementation")
+        #endif
     }
     
     deinit {
+        #if canImport(Firebase)
         if let listener = authStateListener {
             Auth.auth().removeStateDidChangeListener(listener)
         }
+        #endif
     }
     
+    #if canImport(Firebase)
     private func setupRemoteConfig() {
         let settings = RemoteConfigSettings()
         settings.minimumFetchInterval = 3600
@@ -63,14 +76,19 @@ class FirebaseManager: ObservableObject {
             }
         }
     }
+    #endif
     
     func configure() {
-        FirebaseApp.configure()
-        
+        #if canImport(Firebase)
+        // FirebaseApp.configure() should be called by FirebaseSetup
         signInAnonymously()
+        #else
+        print("⚠️ Firebase configure called but SDK not available")
+        #endif
     }
     
     func signInAnonymously() {
+        #if canImport(Firebase)
         Auth.auth().signInAnonymously { [weak self] result, error in
             if let error = error {
                 Crashlytics.crashlytics().record(error: error)
@@ -82,25 +100,38 @@ class FirebaseManager: ObservableObject {
                 ])
             }
         }
+        #else
+        print("⚠️ Anonymous sign-in not available without Firebase")
+        isAuthenticated = false
+        #endif
     }
     
     func signInWithEmail(email: String, password: String) async throws {
+        #if canImport(Firebase)
         let result = try await Auth.auth().signIn(withEmail: email, password: password)
         logEvent("user_signed_in", parameters: [
             "method": "email",
             "user_id": result.user.uid
         ])
+        #else
+        throw FirebaseError.notAuthenticated
+        #endif
     }
     
     func signUpWithEmail(email: String, password: String) async throws {
+        #if canImport(Firebase)
         let result = try await Auth.auth().createUser(withEmail: email, password: password)
         try await createUserDocument(for: result.user)
         logEvent("user_signed_up", parameters: [
             "method": "email",
             "user_id": result.user.uid
         ])
+        #else
+        throw FirebaseError.notAuthenticated
+        #endif
     }
     
+    #if canImport(Firebase)
     private func createUserDocument(for user: User) async throws {
         let userData: [String: Any] = [
             "uid": user.uid,
@@ -115,12 +146,18 @@ class FirebaseManager: ObservableObject {
         
         try await db.collection("users").document(user.uid).setData(userData)
     }
+    #endif
     
     func logEvent(_ name: String, parameters: [String: Any]? = nil) {
+        #if canImport(Firebase)
         Analytics.logEvent(name, parameters: parameters)
+        #else
+        print("📊 Event: \(name) \(parameters ?? [:])")
+        #endif
     }
     
     func trackPhotoAnalysis(photoId: String, analysisTime: TimeInterval, features: [String]) {
+        #if canImport(Firebase)
         let trace = performance.trace(name: "photo_analysis")
         trace?.setValue(analysisTime, forMetric: "analysis_time")
         trace?.setValue(Int64(features.count), forMetric: "feature_count")
@@ -134,9 +171,13 @@ class FirebaseManager: ObservableObject {
         ])
         
         trace?.stop()
+        #else
+        print("📸 Photo analyzed: \(photoId), time: \(analysisTime)s, features: \(features.count)")
+        #endif
     }
     
     func trackOpenerGeneration(photoId: String, count: Int, generationTime: TimeInterval, style: String) {
+        #if canImport(Firebase)
         let trace = performance.trace(name: "opener_generation")
         trace?.setValue(generationTime, forMetric: "generation_time")
         trace?.setValue(Int64(count), forMetric: "opener_count")
@@ -150,20 +191,28 @@ class FirebaseManager: ObservableObject {
         ])
         
         trace?.stop()
+        #else
+        print("💬 Openers generated: \(count), time: \(generationTime)s, style: \(style)")
+        #endif
     }
     
     func saveGenerationHistory(_ history: GenerationHistory) async throws {
-        guard let userId = user?.uid else { return }
+        #if canImport(Firebase)
+        guard let user = user as? User, let userId = user.uid else { return }
         
         var data = history.toDictionary()
         data["userId"] = userId
         data["timestamp"] = FieldValue.serverTimestamp()
         
         try await db.collection("generation_history").addDocument(data: data)
+        #else
+        print("💾 Would save generation history: \(history.id)")
+        #endif
     }
     
     func fetchGenerationHistory(limit: Int = 50) async throws -> [GenerationHistory] {
-        guard let userId = user?.uid else { return [] }
+        #if canImport(Firebase)
+        guard let user = user as? User, let userId = user.uid else { return [] }
         
         let snapshot = try await db.collection("generation_history")
             .whereField("userId", isEqualTo: userId)
@@ -174,17 +223,21 @@ class FirebaseManager: ObservableObject {
         return snapshot.documents.compactMap { doc in
             GenerationHistory.fromDictionary(doc.data())
         }
+        #else
+        return []
+        #endif
     }
     
     func syncUserData() {
-        guard let userId = user?.uid else { return }
+        #if canImport(Firebase)
+        guard let user = user as? User, let userId = user.uid else { return }
         
         Task {
             do {
                 let userDoc = try await db.collection("users").document(userId).getDocument()
                 
                 if !userDoc.exists {
-                    try await createUserDocument(for: user!)
+                    try await createUserDocument(for: user)
                 } else {
                     try await db.collection("users").document(userId).updateData([
                         "updated_at": FieldValue.serverTimestamp(),
@@ -199,6 +252,9 @@ class FirebaseManager: ObservableObject {
                 Crashlytics.crashlytics().record(error: error)
             }
         }
+        #else
+        print("⚠️ User data sync not available without Firebase")
+        #endif
     }
     
     private func syncLocalHistoryToFirestore() async throws {
@@ -206,7 +262,8 @@ class FirebaseManager: ObservableObject {
     }
     
     func uploadAnalyzedPhoto(_ imageData: Data, photoId: String) async throws -> URL {
-        guard let userId = user?.uid else {
+        #if canImport(Firebase)
+        guard let user = user as? User, let userId = user.uid else {
             throw FirebaseError.notAuthenticated
         }
         
@@ -220,8 +277,12 @@ class FirebaseManager: ObservableObject {
         let downloadURL = try await photoRef.downloadURL()
         
         return downloadURL
+        #else
+        throw FirebaseError.notAuthenticated
+        #endif
     }
     
+    #if canImport(Firebase)
     func fetchRemoteConfig() {
         remoteConfig.fetch { [weak self] status, error in
             if status == .success {
@@ -233,15 +294,20 @@ class FirebaseManager: ObservableObject {
             }
         }
     }
+    #endif
     
     func recordAnalyticsEvent(_ event: AnalyticsEvent) async throws {
-        guard let userId = user?.uid else { return }
+        #if canImport(Firebase)
+        guard let user = user as? User, let userId = user.uid else { return }
         
         var eventData = event.toDictionary()
         eventData["userId"] = userId
         eventData["timestamp"] = FieldValue.serverTimestamp()
         
         try await db.collection("analytics_events").addDocument(data: eventData)
+        #else
+        print("📊 Analytics event: \(event.name)")
+        #endif
     }
 }
 
@@ -277,10 +343,15 @@ struct GenerationHistory {
     static func fromDictionary(_ data: [String: Any]) -> GenerationHistory? {
         guard let photoId = data["photoId"] as? String,
               let openers = data["openers"] as? [String],
-              let style = data["style"] as? String,
-              let timestamp = (data["timestamp"] as? Timestamp)?.dateValue() else {
+              let style = data["style"] as? String else {
             return nil
         }
+        
+        #if canImport(Firebase)
+        let timestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+        #else
+        let timestamp = Date()
+        #endif
         
         return GenerationHistory(
             id: UUID().uuidString,

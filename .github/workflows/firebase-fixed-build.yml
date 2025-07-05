@@ -1,0 +1,181 @@
+name: Firebase Fixed Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Remove Duplicate Files
+      run: |
+        echo "🧹 Cleaning up duplicate files..."
+        rm -f Sources/SimpleApp.swift
+        rm -f Package.swift.backup
+        
+    - name: Create Xcode Project
+      run: |
+        echo "📱 Creating Xcode project with Firebase..."
+        
+        # Create a proper xcodeproj using Swift Package Manager
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+          createIntermediateGroups: true
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            ENABLE_BITCODE: NO
+        packages:
+          Firebase:
+            url: https://github.com/firebase/firebase-ios-sdk
+            from: 10.20.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            deploymentTarget: 16.0
+            sources:
+              - path: Sources
+                excludes:
+                  - "**/*.md"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+            dependencies:
+              - package: Firebase
+                product: FirebaseAnalytics
+              - package: Firebase
+                product: FirebaseAuth
+              - package: Firebase
+                product: FirebaseFirestore
+              - package: Firebase
+                product: FirebaseStorage
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                OTHER_SWIFT_FLAGS: "$(inherited) -D canImport(Firebase)"
+        EOF
+        
+        # Install xcodegen
+        brew install xcodegen || brew upgrade xcodegen
+        
+        # Generate project
+        xcodegen generate
+        
+        echo "✅ Project generated with Firebase support"
+        
+    - name: Resolve Dependencies
+      run: |
+        echo "📦 Resolving Swift Package dependencies..."
+        
+        # Force resolve packages
+        xcodebuild -resolvePackageDependencies \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame || true
+          
+        # Give it time to download
+        sleep 30
+        
+    - name: Build App
+      run: |
+        echo "🔨 Building FlirtFrame with Firebase..."
+        
+        # Clean build folder
+        xcodebuild clean \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release
+        
+        # Build for device
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          -allowProvisioningUpdates \
+          -skipPackagePluginValidation \
+          -skipMacroValidation || {
+            echo "❌ Build failed"
+            echo "Checking for common issues..."
+            
+            # Check if Firebase was downloaded
+            find DerivedData -name "Firebase*" -type d | head -10
+            
+            # Check build logs
+            find DerivedData -name "*.xcactivitylog" -exec echo "=== {} ===" \; -exec tail -100 {} \;
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        echo "📦 Creating IPA package..."
+        
+        # Find the app
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ No app bundle found!"
+          find DerivedData -name "*.app" -type d
+          exit 1
+        fi
+        
+        echo "✅ Found app at: $APP_PATH"
+        
+        # Create Payload
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        
+        # Create IPA
+        zip -qr FlirtFrame-Firebase.ipa Payload
+        
+        echo "✅ IPA created successfully!"
+        ls -lh FlirtFrame-Firebase.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Firebase-Fixed
+        path: FlirtFrame-Firebase.ipa
+        if-no-files-found: error
+        retention-days: 7
+        
+    - name: Upload Build Logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          DerivedData/Logs/Build/*.xcactivitylog
+          *.log

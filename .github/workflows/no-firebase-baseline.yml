@@ -1,0 +1,211 @@
+name: No Firebase Baseline Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Create Firebase-Free Version
+      run: |
+        echo "🔧 Creating Firebase-free version for baseline..."
+        
+        # Backup original files
+        cp Sources/FlirtFrameApp.swift Sources/FlirtFrameApp.swift.backup
+        cp Sources/Firebase/FirebaseManager.swift Sources/Firebase/FirebaseManager.swift.backup
+        
+        # Create Firebase-free version of FlirtFrameApp
+        cat > Sources/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameApp: App {
+            @StateObject private var appState = AppState()
+            
+            init() {
+                print("⚠️ Running without Firebase for testing")
+            }
+            
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                        .environmentObject(appState)
+                }
+            }
+        }
+        EOF
+        
+        # Create stub FirebaseManager
+        cat > Sources/Firebase/FirebaseManager.swift << 'EOF'
+        import Foundation
+        import Combine
+
+        // Stub Firebase Manager for builds without Firebase
+        class FirebaseManager: ObservableObject {
+            static let shared = FirebaseManager()
+            
+            @Published var user: String? = nil
+            @Published var isAuthenticated = false
+            
+            private init() {
+                print("⚠️ Using stub FirebaseManager - no Firebase functionality")
+            }
+            
+            func configure() {
+                print("⚠️ Firebase configure called but not available")
+            }
+            
+            func signInAnonymously() {
+                print("⚠️ Anonymous sign-in not available")
+                isAuthenticated = false
+            }
+            
+            func logEvent(_ name: String, parameters: [String: Any]? = nil) {
+                print("📊 Event: \(name)")
+            }
+            
+            func trackPhotoAnalysis(photoId: String, analysisTime: TimeInterval, features: [String]) {
+                print("📸 Photo analyzed: \(photoId)")
+            }
+            
+            func trackOpenerGeneration(photoId: String, count: Int, generationTime: TimeInterval, style: String) {
+                print("💬 Openers generated: \(count)")
+            }
+        }
+
+        struct GenerationHistory {
+            let id: String
+            let photoId: String
+            let openers: [String]
+            let style: String
+            let timestamp: Date
+        }
+
+        struct AnalyticsEvent {
+            let name: String
+            let parameters: [String: Any]
+        }
+
+        enum FirebaseError: LocalizedError {
+            case notAuthenticated
+            case syncFailed
+            
+            var errorDescription: String? {
+                switch self {
+                case .notAuthenticated:
+                    return "User is not authenticated"
+                case .syncFailed:
+                    return "Failed to sync data"
+                }
+            }
+        }
+        EOF
+        
+    - name: Create Project  
+      run: |
+        echo "📱 Creating Xcode project..."
+        
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                excludes:
+                  - "**/*.backup"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+                optional: true
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+        EOF
+        
+        # Install and run xcodegen
+        brew install xcodegen || brew upgrade xcodegen
+        xcodegen generate
+        
+    - name: Build App
+      run: |
+        echo "🔨 Building FlirtFrame (no Firebase)..."
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO || {
+            echo "❌ Build failed"
+            find DerivedData -name "*.xcactivitylog" -exec echo "=== {} ===" \; -exec tail -50 {} \;
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        echo "📦 Creating IPA package..."
+        
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ No app bundle found!"
+          exit 1
+        fi
+        
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-NoFirebase.ipa Payload
+        
+        echo "✅ IPA created successfully!"
+        ls -lh FlirtFrame-NoFirebase.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-NoFirebase-Baseline
+        path: FlirtFrame-NoFirebase.ipa
+        if-no-files-found: error
+        retention-days: 7
+        
+    - name: Restore Files
+      if: always()
+      run: |
+        # Restore original files
+        [ -f Sources/FlirtFrameApp.swift.backup ] && mv Sources/FlirtFrameApp.swift.backup Sources/FlirtFrameApp.swift
+        [ -f Sources/Firebase/FirebaseManager.swift.backup ] && mv Sources/Firebase/FirebaseManager.swift.backup Sources/Firebase/FirebaseManager.swift
