@@ -1,0 +1,195 @@
+name: Iterative Build v6 - Add ContentView
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 6 - Add Real ContentView
+      run: |
+        echo "🎯 Step 6: Adding real ContentView to working base..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        rm -rf BuildSourceV6
+        
+        # Create build directory
+        mkdir -p BuildSourceV6
+        
+        # Start with working v2 app structure
+        cat > BuildSourceV6/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            @StateObject private var appState = AppState()
+            
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                        .environmentObject(appState)
+                }
+            }
+        }
+        EOF
+        
+        # Copy real ContentView
+        cp Sources/ContentView.swift BuildSourceV6/
+        
+        # Create minimal AppState
+        cat > BuildSourceV6/AppState.swift << 'EOF'
+        import Foundation
+        import SwiftUI
+        
+        class AppState: ObservableObject {
+            @Published var hasCompletedOnboarding = false
+        }
+        EOF
+        
+        # Create stubs for views referenced in ContentView
+        cat > BuildSourceV6/ViewStubs.swift << 'EOF'
+        import SwiftUI
+        
+        // Stub views until we add the real ones
+        struct OnboardingView: View {
+            @EnvironmentObject var appState: AppState
+            
+            var body: some View {
+                VStack {
+                    Text("Welcome to FlirtFrame")
+                        .font(.largeTitle)
+                    Button("Get Started") {
+                        appState.hasCompletedOnboarding = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        
+        struct MainTabView: View {
+            var body: some View {
+                TabView {
+                    CameraScreen()
+                        .tabItem {
+                            Label("Camera", systemImage: "camera")
+                        }
+                    
+                    HistoryView()
+                        .tabItem {
+                            Label("History", systemImage: "clock")
+                        }
+                    
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: "gear")
+                        }
+                }
+            }
+        }
+        
+        struct CameraScreen: View {
+            var body: some View {
+                Text("Camera Screen")
+                    .font(.title)
+            }
+        }
+        
+        struct HistoryView: View {
+            var body: some View {
+                Text("History")
+                    .font(.title)
+            }
+        }
+        
+        struct SettingsView: View {
+            var body: some View {
+                Text("Settings")
+                    .font(.title)
+            }
+        }
+        EOF
+        
+        # Info.plist
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>6</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+        </dict>
+        </plist>
+        EOF
+        
+        # Project
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_FILE: Info.plist
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources: BuildSourceV6
+        EOF
+        
+        echo "Files ready:"
+        ls -la BuildSourceV6/
+        
+    - name: Build
+      run: |
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_REQUIRED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" | grep -v debug | head -1)
+        mkdir Payload && cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v6.ipa Payload
+        ls -lh *.ipa
+        
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v6-ContentView
+        path: FlirtFrame-v6.ipa

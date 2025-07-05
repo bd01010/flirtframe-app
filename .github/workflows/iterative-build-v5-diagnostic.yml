@@ -1,0 +1,135 @@
+name: Iterative Build v5 Diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Diagnostic - Test Different Approaches
+      run: |
+        echo "🔍 Running diagnostics for v5..."
+        
+        # Test 1: Can we compile Models.swift at all?
+        echo "=== Test 1: Compile Models.swift ==="
+        swiftc -parse Sources/Models.swift 2>&1 || echo "Models.swift has syntax errors"
+        
+        # Test 2: What dependencies does it need?
+        echo -e "\n=== Test 2: Check dependencies ==="
+        grep -E "import|struct|class|protocol" Sources/Models.swift | head -20
+        
+        # Test 3: Try v2 with just one line added
+        echo -e "\n=== Test 3: Minimal change to v2 ==="
+        rm -rf Test3
+        mkdir -p Test3
+        
+        cat > Test3/App.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        // Adding just this type
+        struct SessionData {
+            let id = UUID()
+        }
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var sessions: [SessionData] = []  // Using new type
+            
+            var body: some View {
+                VStack {
+                    Text("FlirtFrame")
+                    Text("Sessions: \(sessions.count)")
+                    PhotosPicker("Select", selection: $selectedItem, matching: .images)
+                }
+                .padding()
+            }
+        }
+        EOF
+        
+        # Try to compile
+        swiftc -parse Test3/App.swift && echo "✅ Test 3 passed" || echo "❌ Test 3 failed"
+        
+    - name: Try Simplest Build
+      run: |
+        # Use the absolute minimum that worked in v2
+        mkdir -p SimpleBuild
+        
+        # Copy EXACT v2 code
+        cat > SimpleBuild/App.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var selectedImage: UIImage?
+            
+            var body: some View {
+                VStack(spacing: 20) {
+                    Text("FlirtFrame v5 Test")
+                        .font(.largeTitle)
+                    PhotosPicker("Select Photo", selection: $selectedItem, matching: .images)
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            }
+        }
+        EOF
+        
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_KEY_CFBundleDisplayName: FlirtFrame
+            INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Select photos"
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources: SimpleBuild
+        EOF
+        
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          CODE_SIGNING_REQUIRED=NO \
+          -derivedDataPath DerivedData || {
+            echo "Even simplest build failed!"
+            echo "Checking for clues..."
+            find . -name "*.log" | head -5 | xargs tail -20
+          }
