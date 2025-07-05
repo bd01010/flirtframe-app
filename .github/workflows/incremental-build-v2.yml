@@ -1,0 +1,444 @@
+name: Incremental Build v2 - Fixed Models
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Build Structure
+      run: |
+        # Create organized structure
+        mkdir -p FlirtFrameApp/Sources
+        mkdir -p FlirtFrameApp/Resources
+        
+        # Copy ALL source files first
+        cp Sources/*.swift FlirtFrameApp/Sources/ 2>/dev/null || echo "Some files not copied"
+        
+        # Remove Firebase-dependent files for now
+        rm -f FlirtFrameApp/Sources/Firebase*.swift
+        rm -f FlirtFrameApp/Sources/FlirtFrameApp.swift  # Has Firebase
+        
+        # Create compatibility layer for PhotoAnalyzer
+        cat > FlirtFrameApp/Sources/PhotoAnalysisAdapter.swift << 'EOF'
+        import Foundation
+        import UIKit
+
+        // Adapter to convert PhotoAnalyzer's AnalysisResult to our simplified PhotoAnalysis
+        extension PhotoAnalyzer {
+            func analyzeImage(_ image: UIImage) async throws -> PhotoAnalysis {
+                // Call the real analyze method
+                let result = try await analyze(image: image)
+                
+                // Convert to simplified PhotoAnalysis
+                var hasPeople = false
+                var peopleCount = 0
+                var objects: [String] = []
+                var scenes: [String] = []
+                var emotions: [String] = []
+                var activities: [String] = []
+                
+                for element in result.elements {
+                    switch element.type {
+                    case .person:
+                        hasPeople = true
+                        peopleCount += 1
+                    case .object(let name, _):
+                        objects.append(name)
+                    case .scene(let name):
+                        scenes.append(name)
+                    case .emotion(let name):
+                        emotions.append(name)
+                    case .activity(let name):
+                        activities.append(name)
+                    default:
+                        break
+                    }
+                }
+                
+                return PhotoAnalysis(
+                    hasPeople: hasPeople,
+                    peopleCount: peopleCount,
+                    objects: objects,
+                    scenes: scenes,
+                    dominantColors: [],
+                    textFound: [],
+                    emotions: emotions,
+                    activities: activities
+                )
+            }
+        }
+
+        // Simplified PhotoAnalysis for UI
+        struct PhotoAnalysis {
+            let id = UUID()
+            let hasPeople: Bool
+            let peopleCount: Int
+            let objects: [String]
+            let scenes: [String]
+            let dominantColors: [String]
+            let textFound: [String]
+            let emotions: [String]
+            let activities: [String]
+            
+            var isEmpty: Bool {
+                return !hasPeople && objects.isEmpty && scenes.isEmpty
+            }
+        }
+        EOF
+        
+        # Create a working App.swift
+        cat > FlirtFrameApp/Sources/App.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameRealApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    MainContentView()
+                }
+            }
+        }
+        EOF
+        
+        # Create main view that uses real components
+        cat > FlirtFrameApp/Sources/MainContentView.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+
+        struct MainContentView: View {
+            @State private var selectedImage: UIImage?
+            @State private var photoItem: PhotosPickerItem?
+            @State private var isAnalyzing = false
+            @State private var generatedOpeners: [String] = []
+            @State private var errorMessage: String?
+            @State private var analysisDetails: String = ""
+            
+            private let photoAnalyzer = PhotoAnalyzer()
+            
+            var body: some View {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header
+                        VStack(spacing: 8) {
+                            Text("FlirtFrame")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                            
+                            Text("AI-Powered Conversation Starters")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top)
+                        
+                        // Image Display
+                        if let image = selectedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 300)
+                                .cornerRadius(12)
+                                .shadow(radius: 5)
+                        } else {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(height: 250)
+                                .overlay(
+                                    VStack(spacing: 12) {
+                                        Image(systemName: "photo.on.rectangle.angled")
+                                            .font(.system(size: 50))
+                                            .foregroundColor(.gray)
+                                        Text("Select a photo to analyze")
+                                            .foregroundColor(.gray)
+                                    }
+                                )
+                        }
+                        
+                        // Photo Picker Button
+                        PhotosPicker(selection: $photoItem,
+                                   matching: .images) {
+                            Label("Choose Photo", systemImage: "photo.fill")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .onChange(of: photoItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let image = UIImage(data: data) {
+                                    selectedImage = image
+                                    await analyzePhoto(image)
+                                }
+                            }
+                        }
+                        
+                        // Loading State
+                        if isAnalyzing {
+                            VStack(spacing: 10) {
+                                ProgressView()
+                                Text("Analyzing your photo...")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                        }
+                        
+                        // Error Message
+                        if let error = errorMessage {
+                            Text(error)
+                                .foregroundColor(.red)
+                                .font(.caption)
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                        
+                        // Analysis Details
+                        if !analysisDetails.isEmpty && !isAnalyzing {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("What I detected:")
+                                    .font(.headline)
+                                Text(analysisDetails)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                        }
+                        
+                        // Generated Openers
+                        if !generatedOpeners.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Conversation Starters:")
+                                    .font(.headline)
+                                
+                                ForEach(Array(generatedOpeners.enumerated()), id: \.offset) { index, opener in
+                                    HStack(alignment: .top, spacing: 12) {
+                                        Text("\(index + 1).")
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.blue)
+                                        Text(opener)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .padding()
+                                    .background(Color.blue.opacity(0.05))
+                                    .cornerRadius(8)
+                                }
+                            }
+                            .padding(.bottom)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            
+            private func analyzePhoto(_ image: UIImage) async {
+                isAnalyzing = true
+                errorMessage = nil
+                generatedOpeners = []
+                analysisDetails = ""
+                
+                do {
+                    let analysis = try await photoAnalyzer.analyzeImage(image)
+                    
+                    // Build analysis summary
+                    var details: [String] = []
+                    if analysis.hasPeople {
+                        details.append("\(analysis.peopleCount) person(s)")
+                    }
+                    if !analysis.objects.isEmpty {
+                        details.append("Objects: \(analysis.objects.prefix(3).joined(separator: ", "))")
+                    }
+                    if !analysis.scenes.isEmpty {
+                        details.append("Scene: \(analysis.scenes.first ?? "")")
+                    }
+                    if !analysis.activities.isEmpty {
+                        details.append("Activity: \(analysis.activities.first ?? "")")
+                    }
+                    
+                    analysisDetails = details.joined(separator: " • ")
+                    
+                    // Generate context-aware openers
+                    generateContextualOpeners(for: analysis)
+                    
+                } catch {
+                    errorMessage = "Analysis failed: \(error.localizedDescription)"
+                }
+                
+                isAnalyzing = false
+            }
+            
+            private func generateContextualOpeners(for analysis: PhotoAnalysis) {
+                var openers: [String] = []
+                
+                // Activity-based openers
+                if let activity = analysis.activities.first {
+                    openers.append("I see you're into \(activity)! How long have you been doing that?")
+                }
+                
+                // Object-based openers
+                if let object = analysis.objects.first {
+                    openers.append("That \(object) in your photo really caught my eye! What's the story behind it?")
+                }
+                
+                // Scene-based openers
+                if let scene = analysis.scenes.first {
+                    openers.append("That \(scene) looks amazing! Is that a favorite spot of yours?")
+                }
+                
+                // People-based openers
+                if analysis.hasPeople && analysis.peopleCount > 1 {
+                    openers.append("Looks like a fun group! Are these your close friends?")
+                }
+                
+                // Add generic openers if needed
+                if openers.count < 3 {
+                    let genericOpeners = [
+                        "Your photo has such a unique vibe! What inspired this shot?",
+                        "This caught my attention! There's definitely a story here.",
+                        "I'm intrigued by your photo style! Do you do photography often?"
+                    ]
+                    openers.append(contentsOf: genericOpeners.prefix(3 - openers.count))
+                }
+                
+                self.generatedOpeners = Array(openers.prefix(3))
+            }
+        }
+        EOF
+        
+        # Copy Info.plist
+        cp Info.plist FlirtFrameApp/Info.plist 2>/dev/null || cat > FlirtFrameApp/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleDevelopmentRegion</key>
+            <string>en</string>
+            <key>CFBundleExecutable</key>
+            <string>$(EXECUTABLE_NAME)</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleInfoDictionaryVersion</key>
+            <string>6.0</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UILaunchStoryboardName</key>
+            <string>LaunchScreen</string>
+            <key>UIRequiredDeviceCapabilities</key>
+            <array>
+                <string>armv7</string>
+            </array>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame analyzes your photos to generate personalized conversation starters</string>
+            <key>NSCameraUsageDescription</key>
+            <string>FlirtFrame needs camera access to capture photos for analysis</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Copy assets
+        cp -r Assets.xcassets FlirtFrameApp/ 2>/dev/null || mkdir -p FlirtFrameApp/Assets.xcassets
+        
+    - name: Generate Xcode Project
+      run: |
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            DEVELOPMENT_TEAM: ""
+            SWIFT_VERSION: 5.0
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            INFOPLIST_FILE: FlirtFrameApp/Info.plist
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: FlirtFrameApp/Sources
+                compilationConditions:
+                  - "!DEBUG || DEBUG"
+              - path: FlirtFrameApp/Assets.xcassets
+            settings:
+              base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                INFOPLIST_FILE: FlirtFrameApp/Info.plist
+        EOF
+        
+        brew install xcodegen || true
+        xcodegen generate
+        
+        # Verify files
+        echo "Source files:"
+        ls -la FlirtFrameApp/Sources/
+        
+    - name: Build iOS App
+      run: |
+        set -e
+        
+        # Build
+        xcodebuild clean build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          EXCLUDED_ARCHS="" \
+          ONLY_ACTIVE_ARCH=NO || {
+            echo "Build failed, checking logs..."
+            find DerivedData -name "*.log" -exec tail -100 {} \;
+            exit 1
+          }
+          
+        # Find app
+        APP_PATH=$(find DerivedData -name "FlirtFrame.app" -type d | head -1)
+        echo "App found at: $APP_PATH"
+        
+        # Create IPA
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v2.ipa Payload
+        
+        # Verify
+        ls -lh FlirtFrame-v2.ipa
+        unzip -l FlirtFrame-v2.ipa | head -20
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Incremental-v2
+        path: FlirtFrame-v2.ipa
+        if-no-files-found: error
