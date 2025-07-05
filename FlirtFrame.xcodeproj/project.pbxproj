@@ -133,8 +133,8 @@
 				9C9C9C9C9C9C9C9C9C9C9C9C /* Sources */,
 				3C3C3C3C3C3C3C3C3C3C3C3C /* Frameworks */,
 				ADADADADADADADADADADADAD /* Resources */,
-			,
-				B0C15A3DD9A049C5A2971B54 /* Upload dSYM to Crashlytics */);
+				B0C15A3DD9A049C5A2971B54 /* Upload dSYM to Crashlytics */
+			);
 			buildRules = (
 			);
 			dependencies = (
