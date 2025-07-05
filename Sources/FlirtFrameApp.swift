@@ -2,12 +2,10 @@ import SwiftUI
 
 @main
 struct FlirtFrameApp: App {
-    @StateObject private var appState = AppState()
+    // Register app delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
-    init() {
-        // Configure Firebase if available
-        FirebaseSetup.shared.configure()
-    }
+    @StateObject private var appState = AppState()
     
     var body: some Scene {
         WindowGroup {

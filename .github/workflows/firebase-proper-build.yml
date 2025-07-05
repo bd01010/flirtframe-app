@@ -1,0 +1,197 @@
+name: Firebase Proper Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Create Xcode Project with Firebase
+      run: |
+        echo "📱 Creating Xcode project with proper Firebase setup..."
+        
+        # Create project.yml with proper Firebase configuration
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+          createIntermediateGroups: true
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            ENABLE_BITCODE: NO
+            OTHER_LDFLAGS: "$(inherited) -ObjC"
+        packages:
+          Firebase:
+            url: https://github.com/firebase/firebase-ios-sdk.git
+            from: 10.20.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            deploymentTarget: 16.0
+            sources:
+              - path: Sources
+                excludes:
+                  - "**/*.md"
+                  - "**/*.backup"
+                  - "**/*.old"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+            dependencies:
+              - package: Firebase
+                product: FirebaseAnalytics
+              - package: Firebase
+                product: FirebaseAuth
+              - package: Firebase
+                product: FirebaseFirestore
+              - package: Firebase
+                product: FirebaseStorage
+              - package: Firebase
+                product: FirebaseCrashlytics
+              - package: Firebase
+                product: FirebasePerformance
+              - package: Firebase
+                product: FirebaseRemoteConfig
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                OTHER_LDFLAGS: "$(inherited) -ObjC"
+                LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+        EOF
+        
+        # Install xcodegen
+        brew install xcodegen || brew upgrade xcodegen
+        
+        # Generate project
+        xcodegen generate
+        
+        echo "✅ Project generated with proper Firebase configuration"
+        
+    - name: Resolve Dependencies
+      run: |
+        echo "📦 Resolving Firebase dependencies..."
+        
+        # Force resolve packages
+        xcodebuild -resolvePackageDependencies \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame || true
+          
+        # Give it more time to download Firebase SDK
+        echo "⏳ Waiting for Firebase SDK download..."
+        sleep 60
+        
+    - name: Build App
+      run: |
+        echo "🔨 Building FlirtFrame with Firebase..."
+        
+        # Clean build folder
+        xcodebuild clean \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release
+        
+        # Build for device with proper settings
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          OTHER_LDFLAGS="-ObjC" \
+          -allowProvisioningUpdates \
+          -skipPackagePluginValidation \
+          -skipMacroValidation || {
+            echo "❌ Build failed"
+            echo "Checking for common issues..."
+            
+            # Check if Firebase was downloaded
+            echo "Firebase packages in DerivedData:"
+            find DerivedData -name "Firebase*" -type d | head -10
+            
+            # Check SourcePackages
+            echo -e "\nSourcePackages content:"
+            ls -la DerivedData/SourcePackages/checkouts/ || true
+            
+            # Check build logs
+            echo -e "\nBuild logs:"
+            find DerivedData -name "*.xcactivitylog" -exec echo "=== {} ===" \; -exec gunzip -c {} \; | tail -200
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        echo "📦 Creating IPA package..."
+        
+        # Find the app
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ No app bundle found!"
+          find DerivedData -name "*.app" -type d
+          exit 1
+        fi
+        
+        echo "✅ Found app at: $APP_PATH"
+        
+        # Verify Firebase frameworks are included
+        echo "📋 Checking Firebase frameworks in app:"
+        ls -la "$APP_PATH/Frameworks/" | grep -i firebase || echo "No Firebase frameworks found in Frameworks directory"
+        
+        # Create Payload
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        
+        # Create IPA
+        zip -qr FlirtFrame-Firebase-Proper.ipa Payload
+        
+        echo "✅ IPA created successfully!"
+        ls -lh FlirtFrame-Firebase-Proper.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Firebase-Proper
+        path: FlirtFrame-Firebase-Proper.ipa
+        if-no-files-found: error
+        retention-days: 7
+        
+    - name: Upload Build Logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs-proper
+        path: |
+          DerivedData/Logs/Build/*.xcactivitylog
+          *.log

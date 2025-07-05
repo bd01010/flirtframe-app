@@ -14,21 +14,35 @@ let package = Package(
             targets: ["FlirtFrame"]),
     ],
     dependencies: [
-        // Firebase
-        .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "10.20.0"),
+        // Firebase - using the official package name
+        .package(
+            name: "Firebase",
+            url: "https://github.com/firebase/firebase-ios-sdk.git",
+            .upToNextMajor(from: "10.20.0")
+        ),
     ],
     targets: [
         .target(
             name: "FlirtFrame",
             dependencies: [
-                .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
-                .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
-                .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
-                .product(name: "FirebaseStorage", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseAnalytics", package: "Firebase"),
+                .product(name: "FirebaseAuth", package: "Firebase"),
+                .product(name: "FirebaseFirestore", package: "Firebase"),
+                .product(name: "FirebaseStorage", package: "Firebase"),
+                .product(name: "FirebaseCrashlytics", package: "Firebase"),
+                .product(name: "FirebasePerformance", package: "Firebase"),
+                .product(name: "FirebaseRemoteConfig", package: "Firebase"),
             ],
             path: "Sources",
             resources: [
                 .process("../GoogleService-Info.plist"),
+                .process("../Assets.xcassets")
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-suppress-warnings"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-ObjC"])
             ]
         ),
         .testTarget(
