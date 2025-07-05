@@ -1,0 +1,93 @@
+name: Package IPA (No Build)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Create Dummy App Bundle
+      run: |
+        # Create app bundle structure
+        APP_NAME="FlirtFrame.app"
+        mkdir -p "$APP_NAME"
+        
+        # Create a minimal executable
+        cat > main.c << 'EOF'
+        #include <stdio.h>
+        int main() {
+            printf("FlirtFrame App\n");
+            return 0;
+        }
+        EOF
+        
+        # Compile for iOS
+        xcrun -sdk iphoneos clang \
+          -arch arm64 \
+          -mios-version-min=16.0 \
+          -o "$APP_NAME/FlirtFrame" \
+          main.c || echo "Compilation failed, creating dummy"
+          
+        # If compilation failed, create a dummy executable
+        if [ ! -f "$APP_NAME/FlirtFrame" ]; then
+          echo '#!/bin/sh' > "$APP_NAME/FlirtFrame"
+          echo 'echo "FlirtFrame"' >> "$APP_NAME/FlirtFrame"
+          chmod +x "$APP_NAME/FlirtFrame"
+        fi
+        
+        # Create Info.plist
+        cat > "$APP_NAME/Info.plist" << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>CFBundleExecutable</key>
+          <string>FlirtFrame</string>
+          <key>CFBundleIdentifier</key>
+          <string>com.flirtframe.app</string>
+          <key>CFBundleName</key>
+          <string>FlirtFrame</string>
+          <key>CFBundlePackageType</key>
+          <string>APPL</string>
+          <key>CFBundleShortVersionString</key>
+          <string>1.0</string>
+          <key>CFBundleVersion</key>
+          <string>1</string>
+          <key>MinimumOSVersion</key>
+          <string>16.0</string>
+          <key>UIDeviceFamily</key>
+          <array>
+            <integer>1</integer>
+            <integer>2</integer>
+          </array>
+        </dict>
+        </plist>
+        EOF
+        
+        # Create PkgInfo
+        echo -n "APPL????" > "$APP_NAME/PkgInfo"
+        
+        # List what we created
+        echo "App bundle contents:"
+        ls -la "$APP_NAME/"
+        
+        # Create IPA
+        mkdir -p Payload
+        cp -R "$APP_NAME" Payload/
+        zip -r FlirtFrame.ipa Payload
+        
+        # Check size
+        ls -lh FlirtFrame.ipa
+        unzip -l FlirtFrame.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Package-IPA
+        path: FlirtFrame.ipa
+        if-no-files-found: error
