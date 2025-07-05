@@ -67,6 +67,10 @@ jobs:
         # Clean build folder
         rm -rf build
         
+        # List available schemes
+        echo "Available schemes:"
+        xcodebuild -list -project FlirtFrame.xcodeproj || echo "Failed to list schemes"
+        
         # Build the archive without code signing
         xcodebuild archive \
           -project FlirtFrame.xcodeproj \
@@ -79,7 +83,7 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           DEVELOPMENT_TEAM="" \
           PROVISIONING_PROFILE_SPECIFIER="" \
-          clean archive
+          clean archive || (echo "Build failed with error code $?"; exit 1)
           
     - name: Check Archive Contents
       run: |

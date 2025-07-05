@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8B1234511234567890ABCDEF"
+               BlueprintIdentifier = "7A7A7A7A7A7A7A7A7A7A7A7A"
                BuildableName = "FlirtFrame.app"
                BlueprintName = "FlirtFrame"
                ReferencedContainer = "container:FlirtFrame.xcodeproj">
