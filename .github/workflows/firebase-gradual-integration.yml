@@ -1,0 +1,244 @@
+name: Firebase Gradual Integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
+        
+    - name: Step 1 - Basic App Structure
+      run: |
+        echo "📱 Step 1: Creating basic app structure..."
+        
+        # Create basic app files
+        cat > Sources/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameApp: App {
+            @StateObject private var appState = AppState()
+            
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                        .environmentObject(appState)
+                }
+            }
+        }
+        EOF
+        
+        # Ensure we have required files
+        [ -f "Sources/ContentView.swift" ] || cp Sources/ContentView.swift.backup Sources/ContentView.swift 2>/dev/null || echo "No ContentView backup"
+        [ -f "Sources/AppState.swift" ] || cp Sources/AppState.swift.backup Sources/AppState.swift 2>/dev/null || echo "No AppState backup"
+        
+        echo "✅ Basic structure ready"
+        
+    - name: Step 2 - Create Project Without Firebase
+      run: |
+        echo "🔧 Step 2: Creating project without Firebase..."
+        
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                excludes:
+                  - "Firebase/**"
+                  - "AppDelegate.swift"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+                optional: true
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+        EOF
+        
+        brew install xcodegen || brew upgrade xcodegen
+        xcodegen generate
+        
+        echo "✅ Project created without Firebase"
+        
+    - name: Step 3 - Test Build Without Firebase
+      run: |
+        echo "🔨 Step 3: Testing build without Firebase..."
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          -quiet && echo "✅ Build without Firebase successful" || {
+            echo "❌ Build failed even without Firebase"
+            exit 1
+          }
+          
+        # Clean for next step
+        rm -rf DerivedData
+        
+    - name: Step 4 - Add Firebase Package Only
+      run: |
+        echo "📦 Step 4: Adding Firebase package reference..."
+        
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            OTHER_LDFLAGS: "$(inherited) -ObjC"
+        packages:
+          Firebase:
+            url: https://github.com/firebase/firebase-ios-sdk.git
+            from: 10.20.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                excludes:
+                  - "Firebase/**"
+                  - "AppDelegate.swift"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+            dependencies:
+              - package: Firebase
+                product: FirebaseAnalytics
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                OTHER_LDFLAGS: "$(inherited) -ObjC"
+        EOF
+        
+        xcodegen generate
+        echo "✅ Firebase package added"
+        
+    - name: Step 5 - Resolve Firebase Dependencies
+      run: |
+        echo "📥 Step 5: Resolving Firebase dependencies..."
+        
+        xcodebuild -resolvePackageDependencies \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame || echo "⚠️ Initial resolution might fail"
+          
+        # Give more time for download
+        echo "⏳ Waiting for Firebase SDK download..."
+        sleep 90
+        
+        # Try again
+        xcodebuild -resolvePackageDependencies \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame && echo "✅ Dependencies resolved" || echo "⚠️ Resolution issues"
+          
+    - name: Step 6 - Build With Firebase Package
+      run: |
+        echo "🔨 Step 6: Building with Firebase package..."
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          OTHER_LDFLAGS="-ObjC" \
+          -allowProvisioningUpdates && echo "✅ Build with Firebase successful!" || {
+            echo "❌ Build failed with Firebase"
+            
+            # Debug info
+            echo -e "\n🔍 Debug Information:"
+            echo "Checking SourcePackages:"
+            ls -la DerivedData/SourcePackages/checkouts/ 2>/dev/null || echo "No checkouts found"
+            
+            echo -e "\nChecking for Firebase:"
+            find DerivedData -name "*Firebase*" -type d | head -20
+            
+            echo -e "\nBuild log tail:"
+            find DerivedData -name "*.xcactivitylog" -exec gunzip -c {} \; | tail -100
+            
+            exit 1
+          }
+          
+    - name: Create IPA
+      if: success()
+      run: |
+        echo "📦 Creating IPA..."
+        
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        
+        if [ -n "$APP_PATH" ]; then
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qr FlirtFrame-Firebase-Gradual.ipa Payload
+          echo "✅ IPA created with Firebase!"
+          ls -lh FlirtFrame-Firebase-Gradual.ipa
+        else
+          echo "❌ No app bundle found"
+          exit 1
+        fi
+        
+    - name: Upload IPA
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Firebase-Gradual
+        path: FlirtFrame-Firebase-Gradual.ipa
+        if-no-files-found: error
+        retention-days: 7
