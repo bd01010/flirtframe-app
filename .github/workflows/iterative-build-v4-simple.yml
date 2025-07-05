@@ -1,0 +1,223 @@
+name: Iterative Build v4 Simple - Add Models
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 4 - Add Models Only
+      run: |
+        echo "🎯 Step 4 Simple: Adding just Models.swift..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        rm -rf BuildSourceV4Simple
+        
+        # Create build directory
+        mkdir -p BuildSourceV4Simple
+        
+        # Use v3's working base and add Models
+        cat > BuildSourceV4Simple/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        EOF
+        
+        # Copy Models.swift if it exists and doesn't have @main
+        if [ -f "Sources/Models.swift" ]; then
+          echo "Adding Models.swift..."
+          grep -v "@main" Sources/Models.swift > BuildSourceV4Simple/Models.swift || cp Sources/Models.swift BuildSourceV4Simple/Models.swift
+        else
+          # Create basic models
+          cat > BuildSourceV4Simple/Models.swift << 'EOF'
+        import Foundation
+        
+        struct PhotoAnalysis {
+            let id = UUID()
+            let timestamp = Date()
+            let hasPersons: Bool
+            let mood: String
+            let scene: String
+            let objects: [String]
+        }
+        
+        struct Opener {
+            let id = UUID()
+            let text: String
+            let style: String
+            let confidence: Double
+        }
+        
+        struct GenerationResult {
+            let analysis: PhotoAnalysis
+            let openers: [Opener]
+            let generatedAt = Date()
+        }
+        EOF
+        fi
+        
+        # Simple ContentView that uses the models
+        cat > BuildSourceV4Simple/ContentView.swift << 'EOF'
+        import SwiftUI
+        
+        struct ContentView: View {
+            @State private var results: [GenerationResult] = []
+            
+            var body: some View {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        Text("FlirtFrame")
+                            .font(.largeTitle)
+                            .bold()
+                        
+                        Text("Models: \(results.count) results")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Button("Test Models") {
+                            testModels()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        
+                        if !results.isEmpty {
+                            List(results, id: \.analysis.id) { result in
+                                VStack(alignment: .leading) {
+                                    Text("Scene: \(result.analysis.scene)")
+                                        .font(.headline)
+                                    Text("\(result.openers.count) openers generated")
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding()
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+            }
+            
+            func testModels() {
+                let analysis = PhotoAnalysis(
+                    hasPersons: true,
+                    mood: "Happy",
+                    scene: "Beach",
+                    objects: ["Ocean", "Sunset"]
+                )
+                
+                let openers = [
+                    Opener(text: "Love the beach vibes!", style: "Casual", confidence: 0.9),
+                    Opener(text: "That sunset is amazing! Where was this?", style: "Curious", confidence: 0.85)
+                ]
+                
+                let result = GenerationResult(
+                    analysis: analysis,
+                    openers: openers
+                )
+                
+                results.append(result)
+            }
+        }
+        EOF
+        
+        # Info.plist
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleDisplayName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>4</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+        </dict>
+        </plist>
+        EOF
+        
+        # Project configuration
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_FILE: Info.plist
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: BuildSourceV4Simple
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+        EOF
+        
+        echo "✅ Created build with Models"
+        echo "Files:"
+        ls -la BuildSourceV4Simple/
+        
+    - name: Generate and Build
+      run: |
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_REQUIRED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -v debug | head -1)
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v4-simple.ipa Payload
+        ls -lh FlirtFrame-v4-simple.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v4-Simple-Models
+        path: FlirtFrame-v4-simple.ipa
