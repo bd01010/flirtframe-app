@@ -1,0 +1,131 @@
+name: Simple FlirtFrame Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Build Environment
+      run: |
+        # Create Info.plist if missing
+        if [ ! -f "Info.plist" ]; then
+          cp logs/Info.plist . || echo "Using default Info.plist"
+        fi
+        
+        # Ensure GoogleService-Info.plist exists
+        if [ ! -f "GoogleService-Info.plist" ]; then
+          echo "WARNING: GoogleService-Info.plist missing"
+        fi
+        
+    - name: Create Xcode Project
+      run: |
+        # Install xcodegen
+        brew install xcodegen || true
+        
+        # Create project configuration without Firebase SPM (we'll add it manually)
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+          createIntermediateGroups: true
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            TARGETED_DEVICE_FAMILY: "1,2"
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            ENABLE_BITCODE: NO
+            ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                excludes:
+                  - "**/*.md"
+            resources:
+              - path: Assets.xcassets
+              - path: GoogleService-Info.plist
+                optional: true
+            settings:
+              base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+                INFOPLIST_FILE: Info.plist
+        EOF
+        
+        # Generate project
+        xcodegen generate
+        
+    - name: Build App (Without Firebase)
+      run: |
+        # First, let's try building without Firebase to isolate issues
+        
+        # Comment out Firebase imports temporarily
+        find Sources -name "*.swift" -type f -exec sed -i '' 's/import Firebase/\/\/import Firebase/g' {} \;
+        find Sources -name "*.swift" -type f -exec sed -i '' 's/FirebaseApp.configure()/\/\/FirebaseApp.configure()/g' {} \;
+        find Sources -name "*.swift" -type f -exec sed -i '' 's/FirebaseManager/\/\/FirebaseManager/g' {} \;
+        
+        # Build
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          -allowProvisioningUpdates || {
+            echo "Build failed, checking logs..."
+            find DerivedData -name "*.log" -type f -exec echo "=== {} ===" \; -exec tail -100 {} \;
+            exit 1
+          }
+          
+    - name: Create IPA
+      run: |
+        # Find app
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -v "\.xcarchive" | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "ERROR: No app found!"
+          exit 1
+        fi
+        
+        echo "Found app at: $APP_PATH"
+        
+        # Create IPA structure
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        
+        # Create IPA
+        zip -qr FlirtFrame.ipa Payload
+        
+        # Verify
+        echo "IPA created:"
+        ls -lh FlirtFrame.ipa
+        unzip -l FlirtFrame.ipa | head -20
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Simple-Build
+        path: FlirtFrame.ipa
+        if-no-files-found: error

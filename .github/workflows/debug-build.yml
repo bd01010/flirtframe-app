@@ -1,0 +1,101 @@
+name: Debug Build Issue
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: System Info
+      run: |
+        echo "=== System Information ==="
+        sw_vers
+        xcodebuild -version
+        echo ""
+        echo "=== Available SDKs ==="
+        xcodebuild -showsdks
+        
+    - name: Check Project Structure
+      run: |
+        echo "=== Directory Structure ==="
+        ls -la
+        echo ""
+        echo "=== Sources Directory ==="
+        ls -la Sources/ || echo "Sources directory not found"
+        echo ""
+        echo "=== Swift Files ==="
+        find . -name "*.swift" -type f | head -20
+        echo ""
+        echo "=== Check for Info.plist ==="
+        ls -la Info.plist || echo "Info.plist not found"
+        echo ""
+        echo "=== Check for GoogleService-Info.plist ==="
+        ls -la GoogleService-Info.plist || echo "GoogleService-Info.plist not found"
+        
+    - name: Try Simple Build
+      run: |
+        echo "=== Creating minimal test build ==="
+        
+        # Create a minimal Swift file if Sources is empty
+        mkdir -p Sources
+        if [ ! -f "Sources/FlirtFrameApp.swift" ]; then
+          echo "Creating minimal app file..."
+          cat > Sources/MinimalApp.swift << 'EOF'
+        import SwiftUI
+
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    Text("FlirtFrame Test")
+                }
+            }
+        }
+        EOF
+        fi
+        
+        # Create simple project.yml
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - Sources
+        EOF
+        
+        # Try to generate and build
+        echo "=== Installing XcodeGen ==="
+        brew install xcodegen || brew upgrade xcodegen || echo "XcodeGen install failed"
+        
+        echo "=== Generating Project ==="
+        xcodegen generate || echo "Project generation failed"
+        
+        echo "=== Attempting Build ==="
+        xcodebuild -list || echo "Project list failed"
+        
+    - name: Upload Debug Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-logs
+        path: |
+          *.log
+          project.yml
+          Sources/
