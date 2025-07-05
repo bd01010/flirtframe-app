@@ -3,6 +3,10 @@ name: iOS Device Build
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.swift'
+      - '**.xcodeproj/**'
+      - '.github/workflows/ios-device-build.yml'
   workflow_dispatch:
 
 jobs:
