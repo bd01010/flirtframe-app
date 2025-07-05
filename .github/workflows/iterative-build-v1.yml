@@ -1,0 +1,169 @@
+name: Iterative Build v1 - Base App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 1 - Minimal Working App
+      run: |
+        echo "🎯 Step 1: Building minimal app that we know works..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        
+        # Create minimal source
+        mkdir -p SimpleSource
+        
+        # Use the EXACT code that worked before
+        cat > SimpleSource/App.swift << 'EOF'
+        import SwiftUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    VStack {
+                        Text("FlirtFrame")
+                            .font(.largeTitle)
+                            .padding()
+                        
+                        Text("Photo Analyzer")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                        
+                        Spacer()
+                        
+                        Button("Select Photo") {
+                            print("Photo selection")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(UIColor.systemBackground))
+                }
+            }
+        }
+        EOF
+        
+        # Create Info.plist
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleDisplayName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
+        </dict>
+        </plist>
+        EOF
+        
+        # Create project.yml - EXACT copy of what worked
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          createIntermediateGroups: true
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            MARKETING_VERSION: 1.0
+            CURRENT_PROJECT_VERSION: 1
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_STYLE: Manual
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            PROVISIONING_PROFILE_SPECIFIER: ""
+            INFOPLIST_FILE: Info.plist
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            SWIFT_VERSION: 5.0
+            TARGETED_DEVICE_FAMILY: 1,2
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            deploymentTarget: 16.0
+            sources:
+              - path: SimpleSource
+                name: Sources
+                includes:
+                  - "**/*.swift"
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+        EOF
+        
+    - name: Generate and Build
+      run: |
+        # Install xcodegen
+        brew install xcodegen || brew upgrade xcodegen || true
+        
+        # Generate project
+        xcodegen generate --spec project.yml
+        
+        # Build
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath "$PWD/DerivedData" \
+          ONLY_ACTIVE_ARCH=NO \
+          ARCHS="arm64" \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" -type d | grep -E "Release-iphoneos" | head -1)
+        echo "Found app at: $APP_PATH"
+        
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v1.ipa Payload
+        
+        echo "✅ Base app built successfully!"
+        ls -lh FlirtFrame-v1.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v1-Base
+        path: FlirtFrame-v1.ipa
+        if-no-files-found: error
