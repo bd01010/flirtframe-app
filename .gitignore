@@ -99,6 +99,11 @@ iOSInjectionProject/
 # Firebase
 GoogleService-Info.plist
 google-services.json
+google_service_info_base64.txt
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc
 
 # API Keys and Secrets
 Config.xcconfig

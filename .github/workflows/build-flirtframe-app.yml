@@ -1,0 +1,331 @@
+name: Build FlirtFrame App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Sources/**'
+      - 'Assets.xcassets/**'
+      - '*.plist'
+      - '*.yml'
+      - '*.yaml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Environment
+      run: |
+        echo "Setting up build environment..."
+        echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
+        echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+        
+    - name: Validate Project Structure
+      run: |
+        echo "Validating project structure..."
+        
+        # Check for required directories
+        for dir in Sources Assets.xcassets; do
+          if [ ! -d "$dir" ]; then
+            echo "ERROR: Missing required directory: $dir"
+            exit 1
+          fi
+        done
+        
+        # Check for required files
+        for file in GoogleService-Info.plist; do
+          if [ ! -f "$file" ]; then
+            echo "ERROR: Missing required file: $file"
+            exit 1
+          fi
+        done
+        
+        # List source files
+        echo "Source files found:"
+        find Sources -name "*.swift" -type f | sort
+        
+    - name: Create Xcode Project
+      run: |
+        echo "Creating Xcode project configuration..."
+        
+        # Create project.yml for XcodeGen
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+          createIntermediateGroups: true
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            DEVELOPMENT_TEAM: ""
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            INFOPLIST_FILE: Info.plist
+            SWIFT_VERSION: 5.9
+            TARGETED_DEVICE_FAMILY: "1"
+            IPHONEOS_DEPLOYMENT_TARGET: 16.0
+            ENABLE_BITCODE: NO
+            ONLY_ACTIVE_ARCH: NO
+            SKIP_INSTALL: NO
+            ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources
+                includes:
+                  - "**/*.swift"
+            resources:
+              - Assets.xcassets
+              - GoogleService-Info.plist
+            dependencies:
+              - package: Firebase
+                product: FirebaseAnalytics
+              - package: Firebase
+                product: FirebaseAuth
+              - package: Firebase  
+                product: FirebaseFirestore
+            preBuildScripts:
+              - script: |
+                  # Ensure Firebase configuration is present
+                  if [ ! -f "${SRCROOT}/GoogleService-Info.plist" ]; then
+                    echo "error: GoogleService-Info.plist not found"
+                    exit 1
+                  fi
+                name: Validate Firebase Config
+                basedOnDependencyAnalysis: false
+        packages:
+          Firebase:
+            url: https://github.com/firebase/firebase-ios-sdk
+            from: 10.20.0
+        EOF
+        
+        # Create Info.plist if it doesn't exist
+        if [ ! -f "Info.plist" ]; then
+          cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>$(EXECUTABLE_NAME)</string>
+            <key>CFBundleIdentifier</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>CFBundleName</key>
+            <string>$(PRODUCT_NAME)</string>
+            <key>CFBundleDisplayName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>UILaunchStoryboardName</key>
+            <string>LaunchScreen</string>
+            <key>UIRequiredDeviceCapabilities</key>
+            <array>
+                <string>armv7</string>
+            </array>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationPortraitUpsideDown</string>
+            </array>
+            <key>UISupportedInterfaceOrientations~ipad</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationPortraitUpsideDown</string>
+                <string>UIInterfaceOrientationLandscapeLeft</string>
+                <string>UIInterfaceOrientationLandscapeRight</string>
+            </array>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>FlirtFrame needs access to your photos to analyze them and generate conversation starters</string>
+            <key>NSCameraUsageDescription</key>
+            <string>FlirtFrame needs camera access to capture photos for generating conversation starters</string>
+            <key>UIApplicationSceneManifest</key>
+            <dict>
+                <key>UIApplicationSupportsMultipleScenes</key>
+                <false/>
+                <key>UISceneConfigurations</key>
+                <dict>
+                    <key>UIWindowSceneSessionRoleApplication</key>
+                    <array>
+                        <dict>
+                            <key>UISceneConfigurationName</key>
+                            <string>Default Configuration</string>
+                            <key>UISceneDelegateClassName</key>
+                            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+                        </dict>
+                    </array>
+                </dict>
+            </dict>
+        </dict>
+        </plist>
+        EOF
+        fi
+        
+    - name: Install Dependencies
+      run: |
+        # Install XcodeGen if not already installed
+        brew install xcodegen || brew upgrade xcodegen || true
+        
+        # Generate Xcode project
+        xcodegen generate
+        
+        # List generated files
+        echo "Generated project structure:"
+        ls -la FlirtFrame.xcodeproj/
+        
+    - name: Build iOS App
+      run: |
+        echo "Building FlirtFrame app..."
+        
+        # Clean build folder
+        xcodebuild clean \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release
+        
+        # Build for iOS device
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          AD_HOC_CODE_SIGNING_ALLOWED=YES \
+          DEVELOPMENT_TEAM="" \
+          -allowProvisioningUpdates \
+          COMPILER_INDEX_STORE_ENABLE=NO | xcpretty --color || true
+          
+        # Check if build succeeded
+        if [ ! -d "DerivedData/Build/Products/Release-iphoneos/FlirtFrame.app" ]; then
+          echo "ERROR: Build failed - app not found"
+          echo "Checking build logs..."
+          find DerivedData -name "*.log" -type f -exec echo "=== {} ===" \; -exec tail -50 {} \;
+          exit 1
+        fi
+        
+    - name: Create IPA Package
+      run: |
+        echo "Creating IPA package..."
+        
+        # Find the built app
+        APP_PATH="DerivedData/Build/Products/Release-iphoneos/FlirtFrame.app"
+        
+        if [ ! -d "$APP_PATH" ]; then
+          echo "ERROR: App not found at expected path: $APP_PATH"
+          echo "Searching for app..."
+          find DerivedData -name "*.app" -type d
+          exit 1
+        fi
+        
+        echo "Found app at: $APP_PATH"
+        
+        # Verify app contents
+        echo "App contents:"
+        ls -la "$APP_PATH/"
+        
+        # Create Payload directory
+        mkdir -p Payload
+        cp -R "$APP_PATH" Payload/
+        
+        # Create SwiftSupport and Symbols directories if they exist
+        SWIFT_SUPPORT="DerivedData/Build/Products/Release-iphoneos/SwiftSupport"
+        if [ -d "$SWIFT_SUPPORT" ]; then
+          echo "Including SwiftSupport..."
+          cp -R "$SWIFT_SUPPORT" .
+        fi
+        
+        SYMBOLS="DerivedData/Build/Products/Release-iphoneos/Symbols"
+        if [ -d "$SYMBOLS" ]; then
+          echo "Including Symbols..."
+          cp -R "$SYMBOLS" .
+        fi
+        
+        # Create IPA
+        echo "Zipping IPA..."
+        zip -qr FlirtFrame.ipa Payload SwiftSupport Symbols 2>/dev/null || zip -qr FlirtFrame.ipa Payload
+        
+        # Verify IPA
+        if [ ! -f "FlirtFrame.ipa" ]; then
+          echo "ERROR: IPA creation failed"
+          exit 1
+        fi
+        
+        echo "IPA created successfully:"
+        ls -lh FlirtFrame.ipa
+        
+        # Show IPA structure
+        echo ""
+        echo "IPA contents:"
+        unzip -l FlirtFrame.ipa | head -30
+        
+        # Extract and verify Info.plist
+        echo ""
+        echo "Verifying app Info.plist:"
+        unzip -p FlirtFrame.ipa Payload/FlirtFrame.app/Info.plist | plutil -p - | grep -E "(CFBundleIdentifier|CFBundleVersion|CFBundleShortVersionString)" || true
+        
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-iOS-Build
+        path: |
+          FlirtFrame.ipa
+          DerivedData/Build/Products/Release-iphoneos/FlirtFrame.app.dSYM
+        if-no-files-found: error
+        retention-days: 7
+        
+    - name: Create Release Notes
+      run: |
+        cat > release-notes.md << 'EOF'
+        # FlirtFrame iOS Build
+        
+        ## Build Information
+        - **Version**: 1.0.0
+        - **Build**: 1
+        - **Bundle ID**: com.flirtframe.app
+        - **Minimum iOS**: 16.0
+        - **Architecture**: Universal (arm64)
+        
+        ## Features
+        - Photo selection from library
+        - AI-powered conversation starter generation
+        - Firebase Analytics integration
+        - Modern SwiftUI interface
+        
+        ## Installation
+        1. Download the IPA file from artifacts
+        2. Use one of these methods to sideload:
+           - **AltStore**: Open IPA with AltStore
+           - **Sideloadly**: Drag IPA into Sideloadly
+           - **Xcode**: Use Devices & Simulators window
+        
+        ## Notes
+        - This is an unsigned build for sideloading
+        - Requires iOS 16.0 or later
+        - App will need to be re-signed every 7 days (free account)
+        EOF
+        
+    - name: Upload Release Notes
+      uses: actions/upload-artifact@v4
+      with:
+        name: Release-Notes
+        path: release-notes.md
