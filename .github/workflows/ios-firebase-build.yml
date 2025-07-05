@@ -20,22 +20,59 @@ jobs:
       run: |
         brew install firebase-cli
         
-    - name: Decode GoogleService-Info.plist
-      env:
-        GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
+    - name: Create GoogleService-Info.plist
       run: |
-        echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > GoogleService-Info.plist
+        cat > GoogleService-Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+        	<key>API_KEY</key>
+        	<string>AIzaSyBjOftE_ZAb2ijCkW7y1EMQs6vm9PTPJRPw</string>
+        	<key>GCM_SENDER_ID</key>
+        	<string>9614217320</string>
+        	<key>PLIST_VERSION</key>
+        	<string>1</string>
+        	<key>BUNDLE_ID</key>
+        	<string>com.flirtframe.app</string>
+        	<key>PROJECT_ID</key>
+        	<string>j111-c1573</string>
+        	<key>STORAGE_BUCKET</key>
+        	<string>j111-c1573.firebasestorage.app</string>
+        	<key>IS_ADS_ENABLED</key>
+        	<false></false>
+        	<key>IS_ANALYTICS_ENABLED</key>
+        	<false></false>
+        	<key>IS_APPINVITE_ENABLED</key>
+        	<true></true>
+        	<key>IS_GCM_ENABLED</key>
+        	<true></true>
+        	<key>IS_SIGNIN_ENABLED</key>
+        	<true></true>
+        	<key>GOOGLE_APP_ID</key>
+        	<string>1:9614217320:ios:06b78a86ab737224deabdd</string>
+        </dict>
+        </plist>
+        EOF
+        
+    - name: List Schemes
+      run: |
+        xcodebuild -list -project FlirtFrame.xcodeproj
         
     - name: Resolve Dependencies
       run: |
-        xcodebuild -resolvePackageDependencies -scheme FlirtFrame
+        xcodebuild -resolvePackageDependencies
         
     - name: Build
       run: |
         xcodebuild build \
+          -project FlirtFrame.xcodeproj \
           -scheme FlirtFrame \
           -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,name=iPhone 15'
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
           
     - name: Run Tests
       run: |
