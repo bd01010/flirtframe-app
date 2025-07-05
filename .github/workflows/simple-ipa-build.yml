@@ -1,0 +1,80 @@
+name: Simple IPA Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Create Minimal Xcode Project
+      run: |
+        # Create a fresh, minimal iOS project
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGN_IDENTITY: ""
+            CODE_SIGNING_REQUIRED: "NO"
+            CODE_SIGNING_ALLOWED: "NO"
+            DEVELOPMENT_TEAM: ""
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources:
+              - path: Sources/SimpleApp.swift
+              - path: Assets.xcassets
+            settings:
+              base:
+                INFOPLIST_FILE: Info.plist
+                ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        EOF
+        
+        # Install XcodeGen if needed
+        brew install xcodegen || true
+        
+        # Generate the project
+        xcodegen generate
+        
+        # List what was created
+        ls -la
+        
+    - name: Build IPA
+      run: |
+        # Build archive
+        xcodebuild archive \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -configuration Release \
+          -destination "generic/platform=iOS" \
+          -archivePath $PWD/build/FlirtFrame.xcarchive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+        # Create IPA
+        mkdir -p Payload
+        cp -r build/FlirtFrame.xcarchive/Products/Applications/*.app Payload/
+        zip -qr FlirtFrame.ipa Payload
+        
+        # Verify
+        ls -la FlirtFrame.ipa
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-Simple-IPA
+        path: FlirtFrame.ipa
+        if-no-files-found: error
