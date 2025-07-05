@@ -1,0 +1,187 @@
+name: Iterative Build v5 Minimal - Just SessionData
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Build Step 5 Minimal - Only Essential Models
+      run: |
+        echo "🎯 Step 5 Minimal: Adding just SessionData from Models..."
+        
+        # Clean workspace
+        rm -rf FlirtFrame.xcodeproj DerivedData Payload *.ipa
+        rm -rf BuildSourceV5Min
+        
+        # Create build directory
+        mkdir -p BuildSourceV5Min
+        
+        # Working v2 base with Models usage
+        cat > BuildSourceV5Min/FlirtFrameApp.swift << 'EOF'
+        import SwiftUI
+        import PhotosUI
+        
+        @main
+        struct FlirtFrameApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    ContentView()
+                }
+            }
+        }
+        
+        struct ContentView: View {
+            @State private var selectedItem: PhotosPickerItem?
+            @State private var selectedImage: UIImage?
+            @State private var sessions: [SessionData] = []
+            
+            var body: some View {
+                VStack(spacing: 20) {
+                    Text("FlirtFrame")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    Text("Sessions: \(sessions.count)")
+                        .font(.caption)
+                    
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 300)
+                            .cornerRadius(10)
+                    }
+                    
+                    PhotosPicker("Select Photo", selection: $selectedItem, matching: .images)
+                        .buttonStyle(.borderedProminent)
+                    
+                    if selectedImage != nil {
+                        Button("Save Session") {
+                            let opener = Opener(text: "Test opener", style: "Casual")
+                            let session = SessionData(openers: [opener])
+                            sessions.append(session)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+                .onChange(of: selectedItem) { newItem in
+                    Task {
+                        if let data = try? await newItem?.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            selectedImage = image
+                        }
+                    }
+                }
+            }
+        }
+        EOF
+        
+        # Minimal Models - just what we need
+        cat > BuildSourceV5Min/Models.swift << 'EOF'
+        import Foundation
+        
+        // Simple Opener
+        struct Opener: Identifiable {
+            let id = UUID()
+            let text: String
+            let style: String
+        }
+        
+        // SessionData from real Models.swift (simplified)
+        struct SessionData: Identifiable {
+            let id = UUID()
+            let timestamp: Date
+            let openers: [Opener]
+            
+            init(timestamp: Date = Date(), openers: [Opener]) {
+                self.timestamp = timestamp
+                self.openers = openers
+            }
+        }
+        EOF
+        
+        # Info.plist
+        cat > Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlirtFrame</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flirtframe.app</string>
+            <key>CFBundleName</key>
+            <string>FlirtFrame</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>5</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>NSPhotoLibraryUsageDescription</key>
+            <string>Select photos</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Simple project
+        cat > project.yml << 'EOF'
+        name: FlirtFrame
+        options:
+          bundleIdPrefix: com.flirtframe
+          deploymentTarget:
+            iOS: 16.0
+        settings:
+          base:
+            PRODUCT_NAME: FlirtFrame
+            PRODUCT_BUNDLE_IDENTIFIER: com.flirtframe.app
+            CODE_SIGNING_REQUIRED: "NO"
+            INFOPLIST_FILE: Info.plist
+        targets:
+          FlirtFrame:
+            type: application
+            platform: iOS
+            sources: BuildSourceV5Min
+        EOF
+        
+        echo "Files:"
+        ls -la BuildSourceV5Min/
+        
+    - name: Build
+      run: |
+        brew install xcodegen || true
+        xcodegen generate
+        
+        xcodebuild build \
+          -project FlirtFrame.xcodeproj \
+          -scheme FlirtFrame \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_REQUIRED=NO
+          
+    - name: Create IPA
+      run: |
+        APP_PATH=$(find DerivedData -name "*.app" | grep -v debug | head -1)
+        mkdir Payload && cp -R "$APP_PATH" Payload/
+        zip -qr FlirtFrame-v5-minimal.ipa Payload
+        ls -lh *.ipa
+        
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlirtFrame-v5-Minimal
+        path: FlirtFrame-v5-minimal.ipa
