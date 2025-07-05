@@ -58,10 +58,7 @@ jobs:
         
     - name: Resolve Dependencies
       run: |
-        if [ -f "Package.swift" ]; then
-          echo "Resolving Swift Package Dependencies..."
-          xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .build
-        fi
+        echo "Skipping dependency resolution for now..."
         
     - name: Build Archive
       run: |
